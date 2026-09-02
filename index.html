@@ -1,1 +1,1652 @@
+<!DOCTYPE html>
+<html lang="ja">
 
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="style.css">
+
+    <title>SakuraDrill</title>
+</head>
+
+<body>
+    <h1 class="title" id="appTitle"></h1>
+    <!-- 🌸 ホーム -->
+    <div id="homeScreen">
+
+        <h2 class="subTitle">👤 だれがおべんきょうしますか？</h2>
+
+<div id="userListArea" class="userGrid"></div>
+
+<div class="homeActions">
+    <button onclick="showAddUserUI()" class="mainBtn">
+        ➕ 新しく追加
+    </button>
+</div>
+
+<!-- 🌸 管理者モード -->
+<div class="homeActions">
+    <button id="adminBtn" class="menuBtn" onclick="showPointManager()">
+        🔒 管理者
+    </button>
+</div>
+
+</div>
+
+    </div>
+
+    <hr>
+
+    <div id="userStatus" class="userStatus"></div>
+    <!-- 🌸 Sakura Point -->
+    <div id="pointText" class="pointBox">
+        🌸 Sakura Point : 0P
+    </div>
+    <!-- 🌸 学年エリア -->
+    <div id="gradeArea" style="display:none;">
+
+        <h2>🎓 学年選択</h2>
+
+        <div class="gradeNav">
+
+            <button class="menuBtn" onclick="backToHome()">
+                🏠 ホームへ戻る
+            </button>
+
+        </div>
+
+        <button onclick="showWeakAnalysis()">
+            📉 苦手分析を見る
+        </button>
+
+        <button onclick="setGrade('grade1')" class="gradeBtn">小学1年</button>
+        <button onclick="setGrade('grade2')" class="gradeBtn">小学2年</button>
+        <button onclick="setGrade('grade3')" class="gradeBtn">小学3年</button>
+        <button onclick="setGrade('grade4')" class="gradeBtn">小学4年</button>
+        <button onclick="setGrade('grade5')" class="gradeBtn">小学5年</button>
+        <button onclick="setGrade('grade6')" class="gradeBtn">小学6年</button>
+        <button onclick="setGrade('grade7')" class="gradeBtn">
+         中学1年
+        </button>
+    </div>
+
+    <hr>
+
+
+    <!-- 🌸 教科選択 -->
+    <div id="subjectArea" class="card" style="display:none;">
+
+        <h2>📚 教科を選ぼう！</h2>
+
+        <!-- 🌸 ナビゲーション -->
+        <!-- 🌸 今日のひとこと -->
+        <div id="dailyMessage" class="daily-message">
+            🌸 今日も楽しく勉強しよう！
+        </div>
+
+        <p class="message">
+            🌸 今日は何を勉強する？
+        </p>
+
+        <div class="subjectGrid">
+
+            <button
+    id="mathBtn"
+    class="subjectBtn math"
+    onclick="startSelectedMath()">
+
+    📐<br>
+
+    <strong>算数</strong><br>
+
+    <small>数字の世界へ！</small>
+
+</button>
+
+            <button id="kokugoBtn" class="subjectBtn kokugo"
+            onclick="startGrade2Kokugo()">
+                📖<br>
+                <strong>国語</strong><br>
+                <small>小学2年 国語</small>
+            </button>
+
+            <button id="scienceBtn" class="subjectBtn science disabled" onclick="startSelectedRika()">
+                🧪<br>
+                <strong>理科</strong><br>
+                <small>🌸 準備中</small>
+            </button>
+
+            <button id="socialBtn" class="subjectBtn social">
+                🗾<br>
+                <strong>社会</strong><br>
+                <small>🌾 新潟県たんけん</small>
+            </button>
+
+            <button id="englishBtn" class="subjectBtn english disabled" onclick="startSelectedEnglish()">
+                🔤<br>
+                <strong>英語</strong><br>
+                <small>🌸 準備中</small>
+            </button>
+
+            <button class="subjectBtn challenge" onclick="openChallengeHome()">
+                🏆<br>
+                <strong>チャレンジ</strong><br>
+                <small>10～50問に挑戦！</small>
+            </button>
+
+            <button class="subjectBtn studyRecord" onclick="showStudyRecord()">
+                📊<br>
+                <strong>学習レポート</strong><br>
+                <small>今日の学習を確認！</small>
+                </button>
+            <div class="subjectBackCard">
+                <button class="menuBtn" onclick="backToGrade()">
+                    🎓 学年選択へ戻る
+                </button>
+            </div>
+
+        </div> <!-- subjectGrid終了 -->
+        <!-- 🌸 ナビゲーション -->
+                </div>
+
+<!-- 🌸 Engine20 学習レポート -->
+<div id="studyRecordArea" class="card" style="display:none;">
+
+    <h2>📊 学習レポート</h2>
+
+    <div id="studyRecordUser"></div>
+
+    <div class="studyRecordBox">
+
+        <h3>📐 算数</h3>
+
+        <p id="mathRecordText">
+            回答数：0問<br>
+            正解数：0問<br>
+            正解率：0％<br>
+            学習時間：0分0秒
+        </p>
+        <!-- 🌸 Engine20 Phase10
+     算数・単元別学習記録 -->
+<h4>📚 学習した単元</h4>
+
+<div id="mathUnitRecordText">
+    まだ学習した単元はありません。
+</div>
+    </div>
+
+    <div class="studyRecordBox">
+
+        <h3>🗾 社会</h3>
+
+        <p id="socialRecordText">
+            回答数：0問<br>
+            正解数：0問<br>
+            正解率：0％<br>
+            学習時間：0分0秒
+        </p>
+        <!-- 🌸 Engine20 Phase14
+     社会・単元別学習記録 -->
+<h4>📚 学習した単元</h4>
+
+<div id="socialUnitRecordText">
+    まだ学習した単元はありません。
+</div>
+    </div>
+
+        <div class="studyRecordBox">
+
+        <h3>📖 国語</h3>
+
+        <p id="kokugoRecordText">
+            回答数：0問<br>
+            正解数：0問<br>
+            正解率：0％<br>
+            学習時間：0分0秒
+        </p>
+
+        <!-- 🌸 Engine20
+             国語・単元別学習記録 -->
+        <h4>📚 学習した単元</h4>
+
+        <div id="kokugoUnitRecordText">
+            まだ学習した単元はありません。
+        </div>
+
+    </div>
+
+        <div class="studyRecordBox">
+
+        <h3>🧪 理科</h3>
+
+        <p id="rikaRecordText">
+            回答数：0問<br>
+            正解数：0問<br>
+            正解率：0％<br>
+            学習時間：0分0秒
+        </p>
+
+        <!-- 🌸 理科・単元別学習記録 -->
+        <h4>📚 学習した単元</h4>
+
+        <div id="rikaUnitRecordText">
+            まだ学習した単元はありません。
+        </div>
+
+    </div>
+
+        <div class="studyRecordBox">
+
+        <h3>🔤 英語</h3>
+
+        <p id="englishRecordText">
+            回答数：0問<br>
+            正解数：0問<br>
+            正解率：0％<br>
+            学習時間：0分0秒
+        </p>
+
+        <!-- 🌸 英語・単元別学習記録 -->
+        <h4>📚 学習した単元</h4>
+
+        <div id="englishUnitRecordText">
+            まだ学習した単元はありません。
+        </div>
+
+    </div>
+
+
+        <h3>🌸 Sakura Point</h3>
+
+        <p id="studyRecordPoint">
+            0P
+        </p>
+
+    </div>
+
+    <button class="menuBtn" onclick="backToSubjectHome()">
+        📚 教科選択へ戻る
+    </button>
+
+</div>
+
+<!-- 🌸 Sakura Challenge Home -->
+<div id="challengeHomeArea" class="card" style="display:none;">
+            
+
+        <h2 class="challengeTitle">
+            🏆 Sakura Challenge
+        </h2>
+
+    <div class="challengeTeacher">
+        🌸 Sakura先生
+        <div class="teacherMessage">
+            「今日は何に挑戦する？
+            好きなチャレンジを選ぼう！」
+        </div>
+    </div>
+    
+    <!-- ===================================
+     🌸 Management System
+=================================== -->
+
+<h2 class="challengeTitle">
+    🌸 Sakura Point 管理
+</h2>
+
+    <button class="mainBtn" onclick="openMathChallengeCourse()">
+        📐 算数チャレンジ
+    </button>
+
+    <button class="mainBtn" onclick="openSocialChallenge()">
+        🗾 社会チャレンジ
+    </button>
+
+    <button class="mainBtn" onclick="openJapanChallenge()">
+        🌍 全国チャレンジ
+    </button>
+
+    <br><br>
+
+    <button class="menuBtn" onclick="backToSubjectHome()">
+        📚 教科選択へ戻る
+    </button>
+</div>
+<!-- ===================================
+     🌸 Sakura Point 管理
+=================================== -->
+
+<div id="adminArea" class="card" style="display:none;">
+
+    <h2 class="challengeTitle">
+        🌸 Sakura Point 管理
+    </h2>
+
+    <div id="pointManagerArea">
+        <!-- JavaScriptで自動生成 -->
+    </div>
+
+    <br>
+
+    <button class="menuBtn" onclick="backToHome()">
+        🏠 ホームへ戻る
+    </button>
+
+</div>
+
+<!-- ==========================================
+     🌸 Engine19
+     新・教科選択画面（subjectArea2）
+     ※Engine18はそのまま残す
+========================================== -->
+
+<div id="subjectArea2" class="screen" style="display:none;">
+
+    <!-- タイトル -->
+    <h2 class="pageTitle">
+        📚 教科をえらぼう
+    </h2>
+
+    <!-- サブタイトル -->
+    <p class="pageSubTitle">
+        べんきょうしたい きょうか を えらんでね！
+    </p>
+
+    <!-- 教科ボタンエリア -->
+    <div class="subjectGrid19">
+
+        <!-- 算数 -->
+        <button id="mathBtn2"
+                class="subjectBtn19 mathBtn"
+                onclick="startMath()">
+            <span class="subjectIcon19">➕</span>
+            <span class="subjectText19">算数</span>
+        </button>
+
+        <!-- 国語 -->
+        <button id="japaneseBtn2"
+                class="subjectBtn19 japaneseBtn"
+                onclick="startJapanese()">
+            <span class="subjectIcon19">📖</span>
+            <span class="subjectText19">国語</span>
+        </button>
+
+        <!-- 社会 -->
+        <button id="socialBtn2"
+                class="subjectBtn19 socialBtn"
+                onclick="startSocial()">
+            <span class="subjectIcon19">🌏</span>
+            <span class="subjectText19">社会</span>
+        </button>
+
+        <!-- 理科 -->
+        <button id="scienceBtn2"
+                class="subjectBtn19 scienceBtn"
+                onclick="startScience()">
+            <span class="subjectIcon19">🧪</span>
+            <span class="subjectText19">理科</span>
+        </button>
+
+        <!-- 英語 -->
+        <button id="englishBtn2"
+                class="subjectBtn19 englishBtn"
+                onclick="startEnglish()">
+            <span class="subjectIcon19">🔤</span>
+            <span class="subjectText19">英語</span>
+        </button>
+
+        <!-- チャレンジ -->
+        <button id="challengeBtn2"
+                class="subjectBtn19 challengeBtn"
+                onclick="openChallengeHome()">
+            <span class="subjectIcon19">🏆</span>
+            <span class="subjectText19">チャレンジ</span>
+        </button>
+
+    </div>
+
+    <!-- 戻るボタン -->
+    <div class="bottomArea">
+
+        <button class="backBtn"
+                onclick="backToGradeSelect()">
+            ⬅ 学年選択へ戻る
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- 🏆 Challenge コース選択 -->
+<!-- ========================= -->
+<div id="challengeCourseArea" class="card" style="display:none;">
+
+    <h2>🏆 Sakura Challenge</h2>
+
+    <div class="teacherMessage">
+        🌸 Sakura先生<br>
+        「挑戦するコースを選びましょう！」
+    </div>
+
+    <button class="challengeCard beginnerCard"
+            onclick="startBeginnerCourse()">
+        🌱 はじめてコース（10問）
+    </button>
+
+    <button class="challengeCard bronzeCard"
+            onclick="startBronzeCourse()">
+        🥉 ブロンズコース（20問）
+    </button>
+
+    <button class="challengeCard silverCard"
+            onclick="startSilverCourse()">
+        🥈 シルバーコース（30問）
+    </button>
+
+    <button class="challengeCard goldCard"
+            onclick="startGoldCourse()">
+        🥇 ゴールドコース（40問）
+    </button>
+
+    <button class="challengeCard masterCard"
+            onclick="startMasterCourse()">
+        👑 マスターコース（50問）
+    </button>
+
+    <br><br>
+
+    <button class="challengeBackBtn" onclick="backToChallengeHome()">
+    📚 戻る
+    </button>
+
+</div>
+
+    <!-- 🌾 新潟県たんけん -->
+    <div id="socialArea" class="card" style="display:none;">
+
+        <!-- タイトル -->
+        <h2>🗺️ 新潟県たんけん</h2>
+
+        <!-- Sakura先生 -->
+        <div class="teacherMessage">
+            🌸 Sakura先生<br>
+            「今日はどこへ行こうか？」
+        </div>
+
+        <!-- 新潟県マップ -->
+        <div id="niigataMap">
+
+            <div id="mapArea">
+
+                <!-- 佐渡 -->
+                <div class="areaCard sado" onclick="startArea('sado', this)">
+                    🐦<br>
+                    <strong>佐渡市</strong>
+                </div>
+
+                <!-- 弥彦 -->
+                <div class="areaCard yahiko" onclick="startArea('yahiko', this)">
+                    ⛩️<br>
+                    <strong>弥彦村</strong>
+                </div>
+
+                <!-- 新潟 -->
+                <div class="areaCard niigata" onclick="startArea('niigata', this)">
+                    🌊<br>
+                    <strong>新潟市</strong>
+                </div>
+
+                <!-- 長岡 -->
+                <div class="areaCard nagaoka" onclick="startArea('nagaoka', this)">
+                    🎆<br>
+                    <strong>長岡市</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- 情報表示 -->
+        <div class="progressBox">
+
+            <div>
+                📍 現在地：
+                <span id="currentLocation">新潟市</span>
+            </div>
+
+            <br>
+
+            <div class="progressRow">
+
+                <span>🌸 探検達成率</span>
+
+                <span id="progressBar">
+                    🌸☆☆☆☆
+                </span>
+
+            </div>
+
+
+            <!-- 戻る -->
+            <div class="exploreFooter">
+                <button id="backToSubjectBtn" class="submitBtn" onclick="backToSubject()">
+
+                    📚 教科選択へ戻る
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+<!-- =====================================
+🌸 Engine12
+社会科ホーム
+===================================== -->
+
+    <div id="socialHome" style="display:none;">
+
+        <h2>🌸 社会科 🌸</h2>
+
+        <p class="todayMessage">
+            今日は何を学ぼう？
+        </p>
+
+        <div class="subjectGrid">
+
+            <button id="nationBtn" class="subjectBtn social">
+                🌏<br>
+                <strong>日本全国<br>チャレンジ</strong><br>
+                <small>日本全国から出題！</small>
+            </button>
+
+            <button id="prefBtn" class="subjectBtn social" onclick="openPrefectureChallenge()">
+                🗾<br>
+                <strong>都道府県<br>チャレンジ</strong><br>
+                <small>好きな県を選ぼう！</small>
+            </button>
+
+            <button id="randomBtn" class="subjectBtn social" onclick="startJapanChallenge()">
+                ⭐<br>
+                <strong>ランダム<br>チャレンジ</strong><br>
+                <small>毎回違う問題！</small>
+            </button>
+
+            <!--
+<button class="subjectBtn social" onclick="startHokkaidoTohokuTest()">
+    🌸<br>
+    <strong>北海道・東北地方<br>テスト</strong><br>
+    <small>北海道・東北7地域</small>
+</button>
+-->
+
+            <!--
+<button class="subjectBtn social" onclick="startKantoTest()">
+    🌸<br>
+    <strong>関東地方<br>テスト</strong><br>
+    <small>茨城県</small>
+</button>
+-->
+            <!--
+<button class="subjectBtn social" onclick="startChubuTest()">
+    🌸<br>
+    <strong>中部地方<br>テスト</strong><br>
+    <small>富山県</small>
+</button>
+
+<button class="subjectBtn social" onclick="startKinkiTest()">
+    🌸<br>
+    <strong>近畿地方<br>テスト</strong><br>
+    <small>三重県</small>
+</button>
+
+<button class="subjectBtn social" onclick="startChugokuTest()">
+    🌸<br>
+    <strong>中国地方<br>テスト</strong><br>
+    <small>鳥取県</small>
+</button>
+
+
+<button class="subjectBtn social" onclick="startShikokuTest()">
+    🌸<br>
+    <strong>四国地方<br>テスト</strong><br>
+    <small>徳島県・香川県・愛媛県・高知県</small>
+</button>
+-->
+
+            <button id="regionBtn" class="subjectBtn social" onclick="openRegionChallenge()">
+
+                🗾<br>
+                <strong>地方<br>チャレンジ</strong><br>
+                <small>7地方から選ぼう！</small>
+
+            </button>
+
+            <button id="socialGradeBtn" class="subjectBtn social" onclick="openSocialGrade()">
+                🌱<br>
+                <strong>学年別<br>社会ドリル</strong><br>
+                <small>学校の学習を復習！</small>
+            </button>
+
+            <button id="niigataBtn" class="subjectBtn social" onclick="openNiigataMap()">
+                🌾<br>
+                <strong>新潟県<br>たんけん</strong><br>
+                <small>新潟県をもっと知ろう！</small>
+            </button>
+        </div>
+
+        <div class="socialBackArea">
+
+            <button class="menuBtn" onclick="backToSubject()">
+                📚 教科選択へ戻る
+            </button>
+
+        </div>
+
+    </div>
+
+<!-- ===========================
+🌸 Engine12 都道府県チャレンジ
+=========================== -->
+
+    <div id="prefectureChallengeArea" class="challengeArea" style="display:none;">
+
+        <h2 class="challengeTitle">
+            🗾 都道府県チャレンジ
+        </h2>
+
+        <div class="challengeTeacher">
+
+            🌸 Sakura先生より
+
+            <div class="teacherMessage">
+                「好きな都道府県を選ぼう！」
+            </div>
+
+        </div>
+        <div class="regionTitle">
+            🌲 北海道・東北地方
+        </div>
+        <div class="prefectureGrid">
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('北海道')">
+                北海道
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('青森県')">
+                青森県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('岩手県')">
+                岩手県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('宮城県')">
+                宮城県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('秋田県')">
+                秋田県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('山形県')">
+                山形県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('福島県')">
+                福島県
+            </button>
+
+        </div>
+
+        <div class="regionTitle">
+            🗼 関東地方
+        </div>
+
+        <div class="prefectureGrid">
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('茨城県')">
+                茨城県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('栃木県')">
+                栃木県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('群馬県')">
+                群馬県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('埼玉県')">
+                埼玉県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('千葉県')">
+                千葉県
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('東京都')">
+                東京都
+            </button>
+
+            <button class="subjectBtn social" onclick="startPrefectureChallenge('神奈川県')">
+                神奈川県
+            </button>
+           </div>   <!-- ←これを追加 -->
+            <div class="regionTitle">
+                🏔️ 中部地方
+            </div>
+
+            <div class="prefectureGrid">
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('新潟県')">
+                    新潟県
+                </button>
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('富山県')">
+                    富山県
+                </button>
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('石川県')">
+                    石川県
+                </button>
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('福井県')">
+                    福井県
+                </button>
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('山梨県')">
+                    山梨県
+                </button>
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('長野県')">
+                    長野県
+                </button>
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('岐阜県')">
+                    岐阜県
+                </button>
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('静岡県')">
+                    静岡県
+                </button>
+
+                <button class="subjectBtn social" onclick="startPrefectureChallenge('愛知県')">
+                    愛知県
+                </button>
+                </div>   <!-- ←これを追加 -->
+                <div class="regionTitle">
+                    🏯 近畿地方
+                </div>
+
+                <div class="prefectureGrid">
+
+                    <button class="subjectBtn social" onclick="startPrefectureChallenge('滋賀県')">
+                        滋賀県
+                    </button>
+
+                    <button class="subjectBtn social" onclick="startPrefectureChallenge('京都府')">
+                        京都府
+                    </button>
+
+                    <button class="subjectBtn social" onclick="startPrefectureChallenge('大阪府')">
+                        大阪府
+                    </button>
+
+                    <button class="subjectBtn social" onclick="startPrefectureChallenge('兵庫県')">
+                        兵庫県
+                    </button>
+
+                    <button class="subjectBtn social" onclick="startPrefectureChallenge('奈良県')">
+                        奈良県
+                    </button>
+
+                    <button class="subjectBtn social" onclick="startPrefectureChallenge('和歌山県')">
+                        和歌山県
+                    </button>
+
+                    <button class="subjectBtn social" onclick="startPrefectureChallenge('三重県')">
+                        三重県
+                    </button>
+                    </div>   <!-- ←これを追加 --> 
+                    <div class="regionTitle">
+                        ⛩️ 中国地方
+                    </div>
+
+                    <div class="prefectureGrid">
+
+                        <button class="subjectBtn social" onclick="startPrefectureChallenge('鳥取県')">
+                            鳥取県
+                        </button>
+
+                        <button class="subjectBtn social" onclick="startPrefectureChallenge('島根県')">
+                            島根県
+                        </button>
+
+                        <button class="subjectBtn social" onclick="startPrefectureChallenge('岡山県')">
+                            岡山県
+                        </button>
+
+                        <button class="subjectBtn social" onclick="startPrefectureChallenge('広島県')">
+                            広島県
+                        </button>
+
+                        <button class="subjectBtn social" onclick="startPrefectureChallenge('山口県')">
+                            山口県
+                       </button>
+
+                       </div>   <!-- ←追加（中国地方 prefectureGrid を閉じる） -->
+
+                    <div class="regionTitle">
+                         🍊 四国地方
+                   </div>
+
+                        <div class="prefectureGrid">
+
+                            <button class="subjectBtn social" onclick="startPrefectureChallenge('徳島県')">
+                                徳島県
+                            </button>
+
+                            <button class="subjectBtn social" onclick="startPrefectureChallenge('香川県')">
+                                香川県
+                            </button>
+
+                            <button class="subjectBtn social" onclick="startPrefectureChallenge('愛媛県')">
+                                愛媛県
+                            </button>
+
+                            <button class="subjectBtn social" onclick="startPrefectureChallenge('高知県')">
+                                高知県
+                            </button>
+
+                            </div>   <!-- ←追加（四国地方 prefectureGrid を閉じる） -->
+
+                       <div class="regionTitle">
+                            🌺 九州・沖縄地方
+                       </div>
+
+                            <div class="prefectureGrid">
+
+                                <button class="subjectBtn social" onclick="startPrefectureChallenge('福岡県')">
+                                    福岡県
+                                </button>
+
+                                <button class="subjectBtn social" onclick="startPrefectureChallenge('佐賀県')">
+                                    佐賀県
+                                </button>
+
+                                <button class="subjectBtn social" onclick="startPrefectureChallenge('長崎県')">
+                                    長崎県
+                                </button>
+
+                                <button class="subjectBtn social" onclick="startPrefectureChallenge('熊本県')">
+                                    熊本県
+                                </button>
+
+                                <button class="subjectBtn social" onclick="startPrefectureChallenge('大分県')">
+                                    大分県
+                                </button>
+
+                                <button class="subjectBtn social" onclick="startPrefectureChallenge('宮崎県')">
+                                    宮崎県
+                                </button>
+
+                                <button class="subjectBtn social" onclick="startPrefectureChallenge('鹿児島県')">
+                                    鹿児島県
+                                </button>
+
+                                <button class="subjectBtn social" onclick="startPrefectureChallenge('沖縄県')">
+                                    沖縄県
+                                </button>
+
+
+                                <!-- 🌸 以下はPhase6-2で追加していきます -->
+
+                            </div>
+
+                            <div class="socialBackArea">
+
+                                <button class="menuBtn" onclick="backToSocialHome()">
+
+                                    📚 社会ホームへ戻る
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <!-- =====================================
+🌸 Engine12
+学年別社会選択
+===================================== -->
+
+                        <div id="socialGradeArea" style="display:none;">
+
+                            <h2>🌸 学年別 社会ドリル 🌸</h2>
+
+                            <p class="todayMessage">
+                                自分の学年から挑戦しよう！
+                            </p>
+
+
+                            <div class="subjectGrid">
+
+                                <button id="grade3SocialBtn" class="subjectBtn social" onclick="startGrade3Social()">
+                                    🌱<br>
+                                    <strong>小学3年<br>社会</strong><br>
+                                    <small>186問</small>
+                                </button>
+
+
+                                <button id="grade4SocialBtn" class="subjectBtn social" onclick="startGrade4Social()">
+
+                                    🌸<br>
+                                    <strong>小学4年<br>社会</strong><br>
+                                    <small>290問</small>
+
+                                </button>
+
+
+                                <button id="grade5SocialBtn" class="subjectBtn social" onclick="startGrade5Social()">
+                                    🌿<br>
+                                    <strong>小学5年<br>社会</strong><br>
+                                    <small>87問</small>
+                                </button>
+
+
+                                <button id="grade6SocialBtn" class="subjectBtn social" onclick="startGrade6Social()">
+                                    🌳<br>
+                                    <strong>小学6年<br>社会</strong><br>
+                                    <small>105問</small>
+                                </button>
+
+                            </div>
+
+
+                            <div class="socialBackArea">
+
+                                <button class="menuBtn" onclick="backToSocialHome()">
+                                    📚 社会ホームへ戻る
+                                </button>
+
+                            </div>
+
+                        </div>
+ <!-- 
+=====================================
+🌸 Engine12
+全国チャレンジ
+===================================== 
+-->
+
+                        <div id="nationArea" style="display:none;">
+
+                            <h2>🌏 全国チャレンジ</h2>
+
+                            <div class="teacherMessage">
+
+                                🌸 Sakura先生<br>
+                                「今日は日本を旅しよう！」
+
+                            </div>
+
+                            <div class="questionBox">
+
+                                今日は全国から<br>
+                                <strong>40問</strong>出題します。
+
+                            </div>
+
+                            <button id="startNationBtn" class="submitBtn" onclick="startJapanChallenge();">
+
+                                ▶ スタート
+
+                            </button>
+                            <br><br>
+
+                            <button class="menuBtn" onclick="backToSocialHome()">
+                                📚 社会ホームへ戻る
+                            </button>
+
+                        </div>
+
+
+                        <!-- =====================================
+🌸 Engine11
+佐渡市探検画面
+===================================== -->
+
+                        <div id="exploreQuizArea" style="display:none;">
+
+                            <h2 id="exploreTitle" class="challengeTitle">
+    🐦 佐渡市探検
+</h2>
+
+                            <div id="exploreMessage" class="teacherMessage">
+
+                            </div>
+
+                           <div id="exploreQuestion" class="challengeQuestion">
+
+</div>
+
+                            <div id="exploreChoices" class="challengeChoices">
+
+                            </div>
+
+                            <div id="exploreResult" style="display:none;">
+
+                            </div>
+
+
+                            <div class="buttonBar">
+
+    <button id="backToMapBtn"
+            class="menuBtn"
+            onclick="backToExplore()">
+        🗺️ マップへ戻る
+    </button>
+
+    <button id="nextExploreBtn"
+            class="submitBtn"
+            style="display:none;"
+            onclick="nextExploreQuestion()">
+        ▶ 次の問題
+    </button>
+
+</div>
+                        </div>
+
+<!-- 🌸 国語コース選択 -->
+<div id="kokugoCourseArea" style="display:none;">
+
+    <h2 id="kokugoCourseTitle">📖 国語</h2>
+
+    <button
+        type="button"
+        class="kokugoCourseBtn"
+        onclick="startKokugoReading()">
+        📖 漢字の読み
+    </button>
+
+    <button
+        type="button"
+        id="kokugoWritingCourseBtn"
+        class="kokugoCourseBtn"
+        onclick="startKokugoWriting()">
+        ✏️ 漢字の書き
+    </button>
+
+    <button
+        type="button"
+        id="kokugoMixedCourseBtn"
+        class="kokugoCourseBtn"
+        onclick="startKokugoMixed()">
+        🔀 読み・書きミックス
+    </button>
+
+</div>
+
+</div>
+
+                        <!-- 🌸 問題エリア -->
+<div id="quizArea" style="display:none;">
+
+    <div id="questionText" class="questionBox"></div>
+
+    <input
+    id="answerInput"
+    type="text"
+    readonly
+    autocomplete="off"
+    autocorrect="off"
+    spellcheck="false"
+    class="answerInput">
+
+    <!-- 🌸 理科・回答ボタン -->
+    <div id="rikaControls" style="display:none;">
+        <button type="button" id="rikaClearBtn" class="menuBtn" onclick="clearRikaAnswer()">
+            ⌫ けす
+        </button>
+        <button type="button" id="rikaAnswerBtn" class="menuBtn" onclick="submitRikaAnswer()">
+            ⭕ こたえる
+        </button>
+    </div>
+
+    <!-- 🌸 英語・回答ボタン -->
+    <div id="englishControls" style="display:none;">
+        <button type="button" id="englishClearBtn" class="menuBtn" onclick="clearEnglishAnswer()">
+            ⌫ けす
+        </button>
+        <button type="button" id="englishAnswerBtn" class="menuBtn" onclick="submitEnglishAnswer()">
+            ⭕ こたえる
+        </button>
+    </div>
+
+    <!-- 🌸 Engine16 算数テンキー -->
+    <div id="mathKeypadWrap">
+
+        <div id="mathKeypad" style="display:none;">
+
+        </div>
+
+        <!-- 🌸 筆算スペース（式の横に表示。マスに数字を書き込める・採点はされません） -->
+        <div id="hissanScratchWrap" style="display:none;">
+            <div class="hissanScratchLabel">📝 ひっ算（すうじボードから入力できるよ）</div>
+            <div id="hissanPanelContent" class="hissanPanelContent"></div>
+        </div>
+
+    </div>
+<!-- 🌸 国語・読みボード -->
+<div id="kokugoReadingBoard" style="display:none;">
+
+    <div id="kokugoReadingAnswer"></div>
+
+    <div id="kokugoReadingChoices"></div>
+
+    <div id="kokugoReadingControls" class="kokugoReadingControls">
+
+        <button
+            type="button"
+            onclick="clearKokugoReadingAnswer()">
+            ⌫ けす
+        </button>
+
+        <button
+            type="button"
+            onclick="submitKokugoAnswer()">
+            ⭕ こたえる
+        </button>
+
+    </div>
+
+</div>
+
+<!-- 🌸 国語・漢字書きボード -->
+<div id="kokugoWritingBoard" style="display:none;">
+
+    <!-- 🌸 お手本の漢字 -->
+    <div id="kokugoWritingTarget"></div>
+
+    <!-- 🌸 20枠のはめ込みボード -->
+    <div id="kokugoWritingChoices"></div>
+
+    <!-- 🌸 バラバラになった漢字の画 -->
+    <div id="kokugoWritingParts"></div>
+
+    <!-- 🌸 選択した画 -->
+    <div id="kokugoWritingAnswer"></div>
+
+    <!-- 🌸 正しい順番ではめ込む場所 -->
+    <div id="kokugoWritingAnswerBoard"></div>
+
+    <div id="kokugoWritingControls" class="kokugoWritingControls">
+
+        <button
+            type="button"
+            onclick="clearKokugoWritingAnswer()">
+            ⌫ けす
+        </button>
+
+        <button
+            type="button"
+            onclick="submitKokugoWritingAnswer()">
+            ⭕ こたえる
+        </button>
+
+    </div>
+
+</div>
+
+    <!-- 結果表示 -->
+    <div id="feedback"></div>
+
+    <!-- 次の問題ボタン（最初は非表示） -->
+    <button id="nextBtn" style="display:none;">
+        ➡️ 次の問題
+    </button>
+
+    <!-- スコア（今はそのままでOK） -->
+    <div id="scoreText">
+        スコア: 0
+    </div>
+
+</div>
+
+                        <!-- 🌸 苦手分析エリア -->
+                        <div id="resultArea" style="display:none;">
+
+                            <h2>🌸 結果</h2>
+
+                            <div id="resultText"></div>
+
+                            <div id="wrongList"></div>
+
+                            <br>
+
+                            <button onclick="backToGrade()">
+                                🎓 学年選択へ戻る
+                            </button>
+
+                            <button onclick="showWeakHistory()">
+                                🌸 苦手分析
+                            </button>
+
+                        </div>
+
+                        <!-- =========================
+     苦手分析画面（v7.3.1）
+========================= -->
+
+                        <div id="weakHistoryArea" style="display:none;">
+
+                            <h2>🌸 苦手分析</h2>
+
+                            <div id="weakHistoryList"></div>
+
+                            <br>
+
+                            <button onclick="closeWeakHistory()">
+                                🎓 学年へ戻る
+                            </button>
+
+                            <button onclick="backToHome()">
+                                🏠 ホームへ戻る
+                            </button>
+
+                        </div>
+
+
+                        <!-- ===========================
+🌸 Engine12 日本全国チャレンジ
+=========================== -->
+
+                        <div id="japanChallengeArea" class="challengeArea" style="display:none;">
+
+                            <h2 class="challengeTitle">
+                                🗾 日本全国チャレンジ
+                            </h2>
+
+                            <div class="challengeTeacher">
+
+                                🌸 Sakura先生より
+
+                                <div class="teacherMessage">
+                                    「全国制覇を目指そう！」
+                                </div>
+
+                            </div>
+
+                            <div id="japanProgress" class="challengeProgress">
+                                第1問 / 15問
+                            </div>
+
+                            <div id="japanQuestion" class="challengeQuestion">
+                            </div>
+
+                            <div id="japanChoices" class="challengeChoices">
+                            </div>
+
+                            <div id="japanMemo" class="challengeMemo">
+                            </div>
+
+                            <div class="buttonBar">
+
+    <button class="menuBtn"
+            onclick="backToSocialHome()">
+        🏠 社会ホーム
+    </button>
+
+    <button id="nextJapanBtn"
+            class="submitBtn"
+            style="display:none;"
+            onclick="nextJapanQuestion()">
+        ▶ 次の問題
+    </button>
+
+</div>
+
+                        </div>
+
+                        <!-- ===========================
+🌸 Engine12 地方チャレンジ
+=========================== -->
+
+                        <div id="regionChallengeArea" class="challengeArea" style="display:none;">
+
+                            <h2 class="challengeTitle">
+                                🗾 地方チャレンジ
+                            </h2>
+
+
+                            <div class="challengeTeacher">
+
+                                🌸 Sakura先生より
+
+                                <div class="teacherMessage">
+                                    「日本の地方を制覇しよう！」
+                                </div>
+
+                            </div>
+
+
+                            <div class="regionGrid">
+
+
+                                <button class="subjectBtn social" onclick="startHokkaidoTohokuTest()">
+
+                                    🌲<br>
+                                    <strong>
+                                        北海道・東北
+                                    </strong>
+
+                                </button>
+
+
+                                <button class="subjectBtn social" onclick="startKantoTest()">
+
+                                    🌸<br>
+                                    <strong>
+                                        関東
+                                    </strong>
+
+                                </button>
+
+
+                                <button class="subjectBtn social" onclick="startChubuTest()">
+
+                                    🏔️<br>
+                                    <strong>
+                                        中部
+                                    </strong>
+
+                                </button>
+
+
+                                <button class="subjectBtn social" onclick="startKinkiTest()">
+
+                                    🏯<br>
+                                    <strong>
+                                        近畿
+                                    </strong>
+
+                                </button>
+
+
+                                <button class="subjectBtn social" onclick="startChugokuTest()">
+
+                                    🌊<br>
+                                    <strong>
+                                        中国
+                                    </strong>
+
+                                </button>
+
+
+                                <button class="subjectBtn social" onclick="startShikokuTest()">
+
+                                    🍊<br>
+                                    <strong>
+                                        四国
+                                    </strong>
+
+                                </button>
+
+
+                                <button class="subjectBtn social" onclick="startKyushuTest()">
+
+                                    🌺<br>
+                                    <strong>
+                                        九州・沖縄
+                                    </strong>
+
+                                </button>
+
+
+                            </div>
+
+
+                            <div class="socialBackArea">
+
+                                <button class="menuBtn" onclick="backToSocialHome()">
+
+                                    🏠 社会ホームへ戻る
+
+                                </button>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- =====================================
+🌸 Engine12
+学年別社会 クイズ画面
+===================================== -->
+
+                        <div id="socialQuizArea" class="challengeArea" style="display:none;">
+
+                            <h2 class="challengeTitle">
+                                🌸 学年別社会ドリル
+                            </h2>
+
+                            <div class="challengeTeacher">
+
+                                🌸 Sakura先生より
+
+                                <div class="teacherMessage">
+                                    「社会博士を目指そう！」
+                                </div>
+
+                            </div>
+
+                            <div id="socialProgress" class="challengeProgress">
+                                第1問 / 10問
+                            </div>
+
+                            <div id="socialQuestion" class="challengeQuestion">
+                            </div>
+
+                            <div id="socialChoices" class="challengeChoices">
+                            </div>
+
+                            <div id="socialMemo" class="challengeMemo">
+</div>
+
+<div class="buttonBar">
+
+    <button class="menuBtn"
+            onclick="backToSocialHome()">
+        🏠 社会ホーム
+    </button>
+
+    <button id="nextSocialBtn"
+            class="submitBtn"
+            style="display:none;"
+            onclick="nextSocialQuestion()">
+        ▶ 次の問題
+    </button>
+
+</div>
+
+</div>
+
+                        <!-- 🌸 学年別社会 結果画面 -->
+                        <div id="socialResultArea" class="card" style="display:none;">
+
+                            <h2>🌸 学年別社会 終了！</h2>
+
+                            <div id="socialResultText"></div>
+
+                            <button class="submitBtn" onclick="retrySocialChallenge()">
+
+                                🔄 もう一度挑戦
+
+                            </button>
+
+                            <button class="menuBtn" onclick="backToSubject()">
+
+                                📚 教科選択へ戻る
+
+                            </button>
+                        </div>
+
+
+
+                        <!-- =====================================
+🌸 Engine12
+全国チャレンジ終了
+===================================== -->
+
+                        <div id="japanFinishArea" style="display:none;">
+
+                            <h2>🎉 日本全国チャレンジ終了！</h2>
+
+                            <div id="japanResultText" class="questionBox"></div>
+
+                            <div id="japanTeacherMessage" class="teacherMessage">
+
+                                🌸 Sakura先生<br><br>
+
+                                全国チャレンジクリア！<br>
+                                日本のことをたくさん知ることができたね♪<br><br>
+
+                                次は新潟県たんけんにも挑戦してみよう！
+
+                            </div>
+
+                            <br>
+
+                            <button class="submitBtn" onclick="startJapanChallenge()">
+                                🔄 もう一度チャレンジ
+                            </button>
+
+                            <br><br>
+
+                            <button class="menuBtn" onclick="backToSocialHome()">
+                                📚 社会ホームへ戻る
+                            </button>
+
+                        </div>
+
+
+
+                        <!-- 学年別 -->
+                        <script src="data/grades/elementary_low.js"></script>
+                        <script src="data/grades/elementary_high.js"></script>
+                        <script src="data/grades/middle_school.js"></script>
+                        <script src="data/grades/high_school.js"></script>
+
+                        <!-- 新潟県 -->
+                        <script src="data/niigata/sado.js"></script>
+                        <script src="data/niigata/niigata.js"></script>
+
+                        <!-- 全国都道府県 -->
+                        <!-- 北海道 東北 -->
+                        <script src="data/prefectures/hokkaido.js"></script>
+                        <script src="data/prefectures/aomori.js"></script>
+                        <script src="data/prefectures/iwate.js"></script>
+                        <script src="data/prefectures/miyagi.js"></script>
+                        <script src="data/prefectures/akita.js"></script>
+                        <script src="data/prefectures/yamagata.js"></script>
+                        <script src="data/prefectures/fukushima.js"></script>
+                        <!-- 関東 -->
+                        <script src="data/prefectures/ibaraki.js"></script>
+                        <script src="data/prefectures/tochigi.js"></script>
+                        <script src="data/prefectures/gunma.js"></script>
+                        <script src="data/prefectures/saitama.js"></script>
+                        <script src="data/prefectures/chiba.js"></script>
+                        <script src="data/prefectures/tokyo.js"></script>
+                        <script src="data/prefectures/kanagawa.js"></script>
+                        <!-- 中部 -->
+                        <script src="data/prefectures/niigata.js"></script>
+                        <script src="data/prefectures/toyama.js"></script>
+                        <script src="data/prefectures/ishikawa.js"></script>
+                        <script src="data/prefectures/fukui.js"></script>
+                        <script src="data/prefectures/yamanashi.js"></script>
+                        <script src="data/prefectures/nagano.js"></script>
+                        <script src="data/prefectures/gifu.js"></script>
+                        <script src="data/prefectures/shizuoka.js"></script>
+                        <script src="data/prefectures/aichi.js"></script>
+                        <!-- 近畿 -->
+                        <script src="data/prefectures/mie.js"></script>
+                        <script src="data/prefectures/shiga.js"></script>
+                        <script src="data/prefectures/kyoto.js"></script>
+                        <script src="data/prefectures/osaka.js"></script>
+                        <script src="data/prefectures/hyogo.js"></script>
+                        <script src="data/prefectures/nara.js"></script>
+                        <script src="data/prefectures/wakayama.js"></script>
+                        <!-- 中国 -->
+                        <script src="data/prefectures/tottori.js"></script>
+                        <script src="data/prefectures/shimane.js"></script>
+                        <script src="data/prefectures/okayama.js"></script>
+                        <script src="data/prefectures/hiroshima.js"></script>
+                        <script src="data/prefectures/yamaguchi.js"></script>
+                        <!-- 四国 -->
+                        <script src="data/prefectures/tokushima.js"></script>
+                        <script src="data/prefectures/kagawa.js"></script>
+                        <script src="data/prefectures/ehime.js"></script>
+                        <script src="data/prefectures/kochi.js"></script>
+                        <!-- 九州・沖縄 -->
+                        <script src="data/prefectures/fukuoka.js"></script>
+                        <script src="data/prefectures/saga.js"></script>
+                        <script src="data/prefectures/nagasaki.js"></script>
+                        <script src="data/prefectures/kumamoto.js"></script>
+                        <script src="data/prefectures/oita.js"></script>
+                        <script src="data/prefectures/miyazaki.js"></script>
+                        <script src="data/prefectures/kagoshima.js"></script>
+                        <script src="data/prefectures/okinawa.js"></script>
+                        <!-- 🌸 社会科 学年別 -->
+                        <script src="data/grades/grade3_social_studies.js"></script>
+                        <script src="data/grades/grade4_social_studies.js"></script>
+                        <script src="data/grades/grade5_social_studies.js"></script>
+                        <script src="data/grades/grade6_social_studies.js"></script>
+
+                        <!-- 🌸 算数データベース -->
+                        <script src="data/math/grade1_math.js"></script>
+                        <script src="data/math/grade2_math.js"></script>
+                        <script src="data/math/grade3_math.js"></script>
+                        <script src="data/math/grade4_math.js"></script>
+                        <script src="data/math/grade5_math.js"></script>
+                        <script src="data/math/grade6_math.js"></script>
+                        <script src="data/math/chu1_math.js"></script>
+                        <!-- 🌸 国語データベース -->
+                        <script src="data/kokugo/grade1_kokugo.js"></script>
+                        <script src="data/kokugo/grade2_kokugo.js"></script>
+                        <script src="data/kokugo/grade3_kokugo.js"></script>
+                        <script src="data/kokugo/grade4_kokugo.js"></script>
+                        <script src="data/kokugo/grade5_kokugo.js"></script>
+                        <script src="data/kokugo/grade6_kokugo.js"></script>
+                        <!-- 🌸 国語・漢字書きデータ（現状は小学2年の漢字40字分のみ収録） -->
+                        <script src="data/kokugo/kanji_writing.js"></script>
+
+                        <script src="data/rika/grade3_rika.js"></script>
+                        <script src="data/rika/grade4_rika.js"></script>
+                        <script src="data/rika/grade5_rika.js"></script>
+                        <script src="data/rika/grade6_rika.js"></script>
+                        <script src="data/rika/chu1_rika.js"></script>
+
+                        <script src="data/eigo/grade34_eigo.js"></script>
+                        <script src="data/eigo/grade5_eigo.js"></script>
+                        <script src="data/eigo/grade6_eigo.js"></script>
+                        <script src="data/eigo/chu1_eigo.js"></script>
+                        <!-- 全国問題管理 -->
+                        <script src="data/prefectures/japan_questions.js"></script>
+
+                        <!-- メイン -->
+                        <script src="script.js"></script>
+
+
+                        
+</body>
+
+</html>
