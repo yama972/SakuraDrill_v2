@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.5 Stable_10_24";
+const APP_VERSION = "★★★★TEST★★★★";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -146,6 +146,10 @@ let currentEnglishQuestion = null;
 let englishAnswered = false;
 let englishMode = false;
 let englishWrongList = [];
+
+// 🌸 英語・間違えた単語の復習モード
+let englishReviewMode = false;
+let englishReviewScore = 0;
 
 /////////////////////////////////////////////////////
 // 🌸 算数テンキー状態
@@ -4426,6 +4430,60 @@ function tryBuildHissan(question) {
         return null;
     }
 
+    // 🌸 分数のかけ算（分子どうし・分母どうしをかけて、約分する）
+    // 🌸 わり算（÷）は書き方をまだ相談中なので、いったん対象外にする
+    if (question.type === "fraction") {
+
+        const fm = String(question.q).match(
+            /^\s*(\d+)\s*\/\s*(\d+)\s*×\s*(\d+)\s*\/\s*(\d+)\s*=\s*\?(.*)$/
+        );
+
+        if (fm) {
+
+            const fracHTML =
+                buildHissanFractionMulBox(
+                    fm[1], fm[2],
+                    fm[3], fm[4],
+                    question.a
+                );
+
+            if (fracHTML) {
+
+                return {
+                    html: fracHTML,
+                    suffix: (fm[5] || "").trim(),
+                    answerBoxes: true
+                };
+
+            }
+
+        }
+
+        return null;
+    }
+
+    // 🌸 方程式（一次方程式）：移項してxを孤立させる過程を
+    // 筆算枠に表示する。xが両辺にある問題・かっこを展開する問題は
+    // まだ仕組みが複雑になるので、いったん対象外にする（今まで通り
+    // 直接入力）。
+    if (question.type === "equation") {
+
+        const eqHTML =
+            buildHissanEquationBox(question);
+
+        if (eqHTML) {
+
+            return {
+                html: eqHTML,
+                suffix: "",
+                answerBoxes: true
+            };
+
+        }
+
+        return null;
+    }
+
     const arithmeticTypes =
         ["add", "subtract", "multiply", "divide", "remainder", "decimal"];
 
@@ -4500,6 +4558,503 @@ function tryBuildHissan(question) {
     // テンキーの横（筆算パネル）に表示する。答えマスがあるので
     // 常に answerBoxes:true として扱う。
     return { html: boxHTML, suffix: suffix, answerBoxes: true };
+
+}
+
+
+// 🌸 一次方程式：移項してxを孤立させる過程を筆算枠で見せる。
+// 対応する形（qの書き方）：
+// ・ax + b = c 、ax - b = c （2段階：移項してまとめる→わる）
+// ・x + b = c 、x - b = c 、ax = c 、x/a = c （1段階：移項する／わる）
+// xが両辺にある問題・かっこを展開する問題は対象外（null を返す）。
+function buildHissanEquationBox(question) {
+
+    const q = String(question.q || "").trim();
+
+    let boxIndex = 0;
+
+    // 🌸 1つの値を、符号（マイナスの時だけ）＋桁数ぶんの1桁マスに
+    // 分けて書き込めるようにする（分数の筆算と同じ考え方）。
+    const boxesFor = (value) => {
+
+        const isNeg = value < 0;
+
+        const digits =
+            String(Math.abs(value)).split("");
+
+        let html = "";
+
+        if (isNeg) {
+
+            const signIdx = boxIndex++;
+
+            html += `<input type="text" inputmode="text" class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${signIdx}" autocomplete="off">`;
+
+        }
+
+        digits.forEach(() => {
+
+            const idx = boxIndex++;
+
+            html += `<input type="text" inputmode="numeric" class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
+
+        });
+
+        return html;
+
+    };
+
+    // 🌸 xの項（例：-3x）を、符号＋数字のマスに続けて、
+    // 最後に「x」のマスも1つ書き込めるようにする。
+    const boxesForXTerm = (coeff) => {
+
+        let html = boxesFor(coeff);
+
+        const idx = boxIndex++;
+
+        html += `<input type="text" inputmode="text" class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
+
+        return html;
+
+    };
+
+    const stepRow = (label, givenText, boxValue, tailText, isXTerm) => `
+        <div class="hissanEquationStep">
+            <div class="hissanEquationStepLabel">${label}</div>
+            <div class="hissanEquationRow">
+                ${givenText ? `<span>${givenText}</span>` : ""}
+                <span class="hissanEquationBoxes">${isXTerm ? boxesForXTerm(boxValue) : boxesFor(boxValue)}</span>
+                ${tailText ? `<span>${tailText}</span>` : ""}
+            </div>
+        </div>
+    `;
+
+    // 🌸 1つの段の中に、書き込みマスが2か所ある時（例：xの項と
+    // 定数項を同時にまとめる段）に使う。
+    const stepRow2 = (label, part1, boxValue1, mid, boxValue2, tailText) => `
+        <div class="hissanEquationStep">
+            <div class="hissanEquationStepLabel">${label}</div>
+            <div class="hissanEquationRow">
+                ${part1 ? `<span>${part1}</span>` : ""}
+                <span class="hissanEquationBoxes">${boxesFor(boxValue1)}</span>
+                ${mid ? `<span>${mid}</span>` : ""}
+                <span class="hissanEquationBoxes">${boxesFor(boxValue2)}</span>
+                ${tailText ? `<span>${tailText}</span>` : ""}
+            </div>
+        </div>
+    `;
+
+    // =========================
+    // 🌸 4段階：ax + b = cx + d （xが両辺にある）
+    // 　（xの項を移項する→定数項を移項する→
+    // 　　xの項と定数項をそれぞれまとめる→わる、の4段）
+    // =========================
+
+    let m =
+        q.match(/^(\d+)x\s*([+\-])\s*(\d+)\s*=\s*(\d+)x\s*([+\-])\s*(\d+)(?!\d)/);
+
+    if (m) {
+
+        const a = parseInt(m[1], 10);
+        const bAbs = parseInt(m[3], 10);
+        const b = m[2] === "+" ? bAbs : -bAbs;
+        const c = parseInt(m[4], 10);
+        const dAbs = parseInt(m[6], 10);
+        const d = m[5] === "+" ? dAbs : -dAbs;
+
+        if ([a, bAbs, c, dAbs].some(n => isNaN(n)) || a === 0 || c === 0) {
+            return null;
+        }
+
+        const coefCombined = a - c;
+        const constCombined = b - d;
+        const dividend = -constCombined;
+        const divisor = coefCombined;
+
+        // 🌸 係数がマイナスになる問題・答えがマイナスになる問題は、
+        // まだこの筆算枠では扱わない（今まで通り直接入力）
+        if (
+            divisor <= 0 ||
+            dividend <= 0 ||
+            dividend % divisor !== 0
+        ) {
+            return null;
+        }
+
+        const bSign = b >= 0 ? "+" : "-";
+        const bText = `${a}x ${bSign} ${Math.abs(b)}`;
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 移項する（xの項、符号が変わる）", bText, -c, `= ${d}`, true)}
+                ${stepRow("② 移項する（定数項、符号が変わる）", `${bText} - ${c}x`, -d, "= 0")}
+                ${stepRow2("③ まとめる（xの項・定数項）", "", coefCombined, "x", constCombined, "= 0")}
+                ${stepRow("④ xの係数でわる", `x = ${dividend} ÷ ${divisor} =`, dividend / divisor, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
+    // 🌸 4段階：a(x + b) = c
+    // 　（分配法則で展開してから、今までの
+    // 　　移項→まとめる→わる、の3段に続ける）
+    // =========================
+
+    m = q.match(/^(\d+)\(x\s*\+\s*(\d+)\)\s*=\s*(\d+)(?!x)/);
+
+    if (m) {
+
+        const a = parseInt(m[1], 10);
+        const bInner = parseInt(m[2], 10);
+        const c = parseInt(m[3], 10);
+
+        if ([a, bInner, c].some(n => isNaN(n)) || a === 0) {
+            return null;
+        }
+
+        const bExpanded = a * bInner;
+        const combined = bExpanded - c;
+        const dividend = c - bExpanded;
+
+        if (dividend % a !== 0) {
+            return null;
+        }
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 分配法則で展開する", `${a} × ${bInner} =`, bExpanded, "")}
+                ${stepRow("② 移項する（符号が変わる）", `${a}x + ${bExpanded}`, -c, "= 0")}
+                ${stepRow("③ 定数項をまとめる", `${a}x`, combined, "= 0")}
+                ${stepRow("④ xの係数でわる", `x = ${dividend} ÷ ${a} =`, dividend / a, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
+    // 🌸 4段階：a(x - b) = c
+    // =========================
+
+    m = q.match(/^(\d+)\(x\s*-\s*(\d+)\)\s*=\s*(\d+)(?!x)/);
+
+    if (m) {
+
+        const a = parseInt(m[1], 10);
+        const bInner = parseInt(m[2], 10);
+        const c = parseInt(m[3], 10);
+
+        if ([a, bInner, c].some(n => isNaN(n)) || a === 0) {
+            return null;
+        }
+
+        const bExpanded = a * bInner;
+        const combined = -(bExpanded + c);
+        const dividend = bExpanded + c;
+
+        if (dividend % a !== 0) {
+            return null;
+        }
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 分配法則で展開する", `${a} × ${bInner} =`, bExpanded, "")}
+                ${stepRow("② 移項する（符号が変わる）", `${a}x - ${bExpanded}`, -c, "= 0")}
+                ${stepRow("③ 定数項をまとめる", `${a}x`, combined, "= 0")}
+                ${stepRow("④ xの係数でわる", `x = ${dividend} ÷ ${a} =`, dividend / a, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
+    // 🌸 2段階：ax + b = c
+    // =========================
+
+    m = q.match(/^(\d+)x\s*\+\s*(\d+)\s*=\s*(\d+)(?!x)/);
+
+    if (m) {
+
+        const a = parseInt(m[1], 10);
+        const b = parseInt(m[2], 10);
+        const c = parseInt(m[3], 10);
+
+        if ([a, b, c].some(n => isNaN(n)) || a === 0) {
+            return null;
+        }
+
+        const combined = b - c;
+        const dividend = c - b;
+
+        if (dividend % a !== 0) {
+            return null;
+        }
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 移項する（符号が変わる）", `${a}x + ${b}`, -c, "= 0")}
+                ${stepRow("② 定数項をまとめる", `${a}x`, combined, "= 0")}
+                ${stepRow("③ xの係数でわる", `x = ${dividend} ÷ ${a} =`, dividend / a, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
+    // 🌸 2段階：ax - b = c
+    // =========================
+
+    m = q.match(/^(\d+)x\s*-\s*(\d+)\s*=\s*(\d+)(?!x)/);
+
+    if (m) {
+
+        const a = parseInt(m[1], 10);
+        const b = parseInt(m[2], 10);
+        const c = parseInt(m[3], 10);
+
+        if ([a, b, c].some(n => isNaN(n)) || a === 0) {
+            return null;
+        }
+
+        const combined = -(b + c);
+        const dividend = b + c;
+
+        if (dividend % a !== 0) {
+            return null;
+        }
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 移項する（符号が変わる）", `${a}x - ${b}`, -c, "= 0")}
+                ${stepRow("② 定数項をまとめる", `${a}x`, combined, "= 0")}
+                ${stepRow("③ xの係数でわる", `x = ${dividend} ÷ ${a} =`, dividend / a, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
+    // 🌸 1段階：x + b = c → x = c - b
+    // =========================
+
+    m = q.match(/^x\s*\+\s*(\d+)\s*=\s*(\d+)(?!x)/);
+
+    if (m) {
+
+        const b = parseInt(m[1], 10);
+        const c = parseInt(m[2], 10);
+
+        if ([b, c].some(n => isNaN(n))) {
+            return null;
+        }
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 移項する", `x = ${c} - ${b} =`, c - b, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
+    // 🌸 1段階：x - b = c → x = c + b
+    // =========================
+
+    m = q.match(/^x\s*-\s*(\d+)\s*=\s*(\d+)(?!x)/);
+
+    if (m) {
+
+        const b = parseInt(m[1], 10);
+        const c = parseInt(m[2], 10);
+
+        if ([b, c].some(n => isNaN(n))) {
+            return null;
+        }
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 移項する", `x = ${c} + ${b} =`, c + b, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
+    // 🌸 1段階：ax = c → x = c ÷ a
+    // =========================
+
+    m = q.match(/^(\d+)x\s*=\s*(\d+)(?!x)/);
+
+    if (m) {
+
+        const a = parseInt(m[1], 10);
+        const c = parseInt(m[2], 10);
+
+        if ([a, c].some(n => isNaN(n)) || a === 0 || c % a !== 0) {
+            return null;
+        }
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① xの係数でわる", `x = ${c} ÷ ${a} =`, c / a, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
+    // 🌸 1段階：x/a = c → x = c × a
+    // =========================
+
+    m = q.match(/^x\s*\/\s*(\d+)\s*=\s*(\d+)(?!x)/);
+
+    if (m) {
+
+        const a = parseInt(m[1], 10);
+        const c = parseInt(m[2], 10);
+
+        if ([a, c].some(n => isNaN(n))) {
+            return null;
+        }
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 逆演算でxをもとめる", `x = ${c} × ${a} =`, c * a, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // 🌸 xが両辺にある問題・かっこを展開する問題・文章題は対象外
+    return null;
+
+}
+
+
+// 🌸 分数のかけ算：分子どうし・分母どうしをそれぞれかけ算として書き込み、
+// できた分数（約分前）を、さらに約分した最終的な答えへつなげる。
+// 「算数方式」と同じく、答えは1桁ずつのマスに分けて書き込む
+// （2桁の答えになる場合もあるため、桁数はその都度の値から決める）。
+function buildHissanFractionMulBox(aNumStr, aDenStr, bNumStr, bDenStr, answerRaw) {
+
+    const aNum = parseInt(aNumStr, 10);
+    const aDen = parseInt(aDenStr, 10);
+    const bNum = parseInt(bNumStr, 10);
+    const bDen = parseInt(bDenStr, 10);
+
+    if ([aNum, aDen, bNum, bDen].some(n => isNaN(n))) {
+        return null;
+    }
+
+    const prodNum = aNum * bNum;
+    const prodDen = aDen * bDen;
+
+    // 🌸 正解（約分後の分数、または整数）から、最終的な分子・分母を割り出す
+    const ansStr = String(answerRaw == null ? "" : answerRaw).trim();
+
+    let finalNum;
+    let finalDen;
+
+    if (ansStr.includes("/")) {
+
+        const ansParts = ansStr.split("/");
+
+        finalNum = parseInt(ansParts[0], 10);
+        finalDen = parseInt(ansParts[1], 10);
+
+    } else {
+
+        finalNum = parseInt(ansStr, 10);
+        finalDen = 1;
+    }
+
+    if (isNaN(finalNum) || isNaN(finalDen)) {
+        return null;
+    }
+
+    let boxIndex = 0;
+
+    // 🌸 1つの値を、桁数ぶんの1桁マスに分けて書き込めるようにする
+    const digitBoxesFor = (value) => {
+
+        const digits =
+            String(Math.abs(value)).split("");
+
+        return digits.map(() => {
+
+            const idx = boxIndex++;
+
+            return `<input type="text" inputmode="numeric" class="hissanAnswerBox hissanFracBox" data-hissan-idx="${idx}" autocomplete="off">`;
+
+        }).join("");
+    };
+
+    const calcRow = (givenText, value) => `
+        <div class="hissanFracRow">
+            <span class="hissanFracGivenCalc">${givenText} =</span>
+            <span class="hissanFracBoxes">${digitBoxesFor(value)}</span>
+        </div>
+    `;
+
+    const boxesOnlyRow = (value) => `
+        <div class="hissanFracRow">
+            <span class="hissanFracBoxes">${digitBoxesFor(value)}</span>
+        </div>
+    `;
+
+    // 🌸 ①分子どうし・分母どうしをかけ算する段
+    const stepOneHTML = `
+        <div class="hissanFracStep">
+            ${calcRow(`${aNumStr} × ${bNumStr}`, prodNum)}
+            <div class="hissanFracBar"></div>
+            ${calcRow(`${aDenStr} × ${bDenStr}`, prodDen)}
+        </div>
+    `;
+
+    // 🌸 ②約分した、最終的な答えの段
+    // 　（答えが整数の場合は、分母の段（＝1）は表示しない）
+    const stepTwoHTML =
+        finalDen === 1
+            ? `
+        <div class="hissanFracStep">
+            ${boxesOnlyRow(finalNum)}
+        </div>
+    `
+            : `
+        <div class="hissanFracStep">
+            ${boxesOnlyRow(finalNum)}
+            <div class="hissanFracBar"></div>
+            ${boxesOnlyRow(finalDen)}
+        </div>
+    `;
+
+    const html = `
+        <div class="hissanFractionPanel">
+            ${stepOneHTML}
+            <div class="hissanFracArrow">↓ 約分すると</div>
+            ${stepTwoHTML}
+        </div>
+    `;
+
+    return html;
 
 }
 
@@ -4902,10 +5457,13 @@ function wireHissanAnswerBoxes() {
         // 🌸 実物のキーボードで直接入力した時も、数字だけに整えて
         // 次のマス（計算順で1つ上の位）へ自動で進む。最後のマスまで
         // 書き終えたら、今まで通り上の回答欄へカーソルを移動する。
+        // 🌸 バグ修正：方程式の筆算枠では「－」だけが入るマスもあるため、
+        // 数字に加えて「－」も残すようにする（他の筆算では今まで通り
+        // 数字しか出てこないので影響なし）。
         box.addEventListener("input", () => {
 
             box.value = box.value
-                .replace(/[^0-9]/g, "")
+                .replace(/[^0-9\-]/g, "")
                 .slice(-1);
 
             if (box.value) {
@@ -5480,6 +6038,14 @@ function submitAnswer() {
 
         type:
             quizState.currentQuestion.type,
+
+
+        // 🌸 バグ修正：復習モードで getAnswerType() に渡す時、
+        // 学年（grade）が無いと「中1」などの学年別のキーボード
+        // 判定ができず、間違ったテンキーが出てしまう。
+        // 復習でも正しいテンキーを選べるよう、学年も記録しておく。
+        grade:
+            quizState.currentQuestion.grade,
 
 
         inputType:
@@ -6850,7 +7416,16 @@ function showEnglishQuestion() {
         currentEnglishQuiz.length
     ) {
 
-        showEnglishResult();
+        // 🌸 復習モードでは専用の結果画面を表示する
+        if (englishReviewMode) {
+
+            showEnglishReviewResult();
+
+        } else {
+
+            showEnglishResult();
+
+        }
 
         return;
     }
@@ -7079,28 +7654,34 @@ function submitEnglishAnswer() {
             currentEnglishQuestion.a
         ).trim();
 
-    // 🌸 英語・単元別記録
-    const englishUnit =
-        currentEnglishQuestion.unit;
+    // 🌸 バグ修正：復習モード（間違えた単語だけを出題）では
+    // 1問目の時にすでに学習記録は付いているので、ここでは
+    // 二重に記録しない。スコアも本編とは別の englishReviewScore で数える。
+    if (!englishReviewMode) {
 
-    if (!studyRecord.english.units) {
-        studyRecord.english.units = {};
-    }
+        // 🌸 英語・単元別記録
+        const englishUnit =
+            currentEnglishQuestion.unit;
 
-    if (englishUnit) {
-
-        if (!studyRecord.english.units[englishUnit]) {
-
-            studyRecord.english.units[englishUnit] = {
-                answered: 0,
-                correct: 0
-            };
+        if (!studyRecord.english.units) {
+            studyRecord.english.units = {};
         }
 
-        studyRecord.english.units[englishUnit].answered++;
-    }
+        if (englishUnit) {
 
-    studyRecord.english.answered++;
+            if (!studyRecord.english.units[englishUnit]) {
+
+                studyRecord.english.units[englishUnit] = {
+                    answered: 0,
+                    correct: 0
+                };
+            }
+
+            studyRecord.english.units[englishUnit].answered++;
+        }
+
+        studyRecord.english.answered++;
+    }
 
     answerInput.disabled = true;
 
@@ -7112,14 +7693,6 @@ function submitEnglishAnswer() {
         )
     ) {
 
-        englishScore++;
-
-        studyRecord.english.correct++;
-
-        if (englishUnit && studyRecord.english.units[englishUnit]) {
-            studyRecord.english.units[englishUnit].correct++;
-        }
-
         feedback.innerHTML = `
             <h3>⭕ 正解！</h3>
             <p>📖 <strong>解説</strong></p>
@@ -7127,19 +7700,35 @@ function submitEnglishAnswer() {
         `;
 
         playSound("correct");
-        addPoint(10);
-        showSakura();
+
+        if (englishReviewMode) {
+
+            // 🌸 復習で正解できた単語は、もう苦手リストに残さない
+            englishReviewScore++;
+
+            englishWrongList = englishWrongList.filter(
+                item => item.question !== currentEnglishQuestion.q
+            );
+
+        } else {
+
+            englishScore++;
+
+            studyRecord.english.correct++;
+
+            const englishUnit =
+                currentEnglishQuestion.unit;
+
+            if (englishUnit && studyRecord.english.units[englishUnit]) {
+                studyRecord.english.units[englishUnit].correct++;
+            }
+
+            addPoint(10);
+            showSakura();
+
+        }
 
     } else {
-
-        englishWrongList.push({
-            question: currentEnglishQuestion.q,
-            correct: correctAnswer,
-            userAnswer: userAnswer,
-            unit: currentEnglishQuestion.unit,
-            type: currentEnglishQuestion.type,
-            memo: currentEnglishQuestion.memo
-        });
 
         feedback.innerHTML = `
             <h3>❌ 不正解</h3>
@@ -7149,6 +7738,21 @@ function submitEnglishAnswer() {
         `;
 
         playSound("wrong");
+
+        // 🌸 復習中にまた間違えた単語は、すでに englishWrongList に
+        // 入っているので重複して追加しない
+        if (!englishReviewMode) {
+
+            englishWrongList.push({
+                question: currentEnglishQuestion.q,
+                correct: correctAnswer,
+                userAnswer: userAnswer,
+                unit: currentEnglishQuestion.unit,
+                type: currentEnglishQuestion.type,
+                memo: currentEnglishQuestion.memo
+            });
+
+        }
     }
 
     // =========================================
@@ -7185,11 +7789,15 @@ function submitEnglishAnswer() {
             "none";
     }
 
-    // 🌸 英語1問分の学習時間を確定
-    finishStudyQuestion("english");
+    if (!englishReviewMode) {
 
-    // 🌸 今日の学習記録を自動保存
-    saveTodayStudyRecord();
+        // 🌸 英語1問分の学習時間を確定
+        finishStudyQuestion("english");
+
+        // 🌸 今日の学習記録を自動保存
+        saveTodayStudyRecord();
+
+    }
 
 }
 
@@ -7272,6 +7880,11 @@ function showEnglishResult() {
             }
         );
 
+        // 🌸 間違えた単語だけをもう一度出題する復習ボタン
+        resultArea.innerHTML += `
+            <button onclick="startEnglishReview()">📚 英語を復習する</button>
+        `;
+
     } else {
 
         resultArea.innerHTML += `
@@ -7291,18 +7904,197 @@ function showEnglishResult() {
 
 }
 
+/////////////////////////////////////////////////////
+// 🌸 英語・間違えた単語の復習
+/////////////////////////////////////////////////////
+
+function startEnglishReview() {
+
+    if (englishWrongList.length === 0) {
+
+        alert("🌸 復習する問題はありません！");
+
+        return;
+    }
+
+    // 🌸 間違えた単語だけを出題リストにする
+    // （englishWrongList の形 {question, correct, ...} を
+    // 　通常の出題データの形 {q, a, ...} に変換する）
+    currentEnglishQuiz =
+        englishWrongList.map(item => ({
+            q: item.question,
+            a: item.correct,
+            unit: item.unit,
+            type: item.type,
+            memo: item.memo
+        }));
+
+    englishIndex = 0;
+    englishReviewScore = 0;
+    currentEnglishQuestion = null;
+    englishAnswered = false;
+
+    // =========================================
+    // 🌸 復習モード開始（他教科モードは解除）
+    // =========================================
+
+    kokugoMode = false;
+    reviewMode = false;
+    rikaMode = false;
+    englishMode = true;
+    englishReviewMode = true;
+
+    // =========================================
+    // 🌸 画面整理
+    // =========================================
+
+    clearScreens();
+
+    document.getElementById(
+        "quizArea"
+    ).style.display =
+        "block";
+
+    document.getElementById(
+        "resultArea"
+    ).style.display =
+        "none";
+
+    const englishControls =
+        document.getElementById(
+            "englishControls"
+        );
+
+    if (englishControls) {
+
+        englishControls.style.display =
+            "flex";
+    }
+
+    feedback.textContent =
+        "";
+
+    nextBtn.style.display =
+        "none";
+
+    document.getElementById(
+        "scoreText"
+    ).textContent =
+        "スコア: 0";
+
+    // =========================================
+    // 🌸 1問目表示
+    // =========================================
+
+    showEnglishQuestion();
+
+}
+
+function showEnglishReviewResult() {
+
+    console.log(
+        "🌸 英語復習結果:",
+        englishReviewScore
+    );
+
+    englishMode = false;
+    englishReviewMode = false;
+
+    const englishControls =
+        document.getElementById(
+            "englishControls"
+        );
+
+    if (englishControls) {
+
+        englishControls.style.display =
+            "none";
+    }
+
+    const quizAreaEl =
+        document.getElementById(
+            "quizArea"
+        );
+
+    if (quizAreaEl) {
+
+        quizAreaEl.style.display =
+            "none";
+    }
+
+    const resultArea =
+        document.getElementById(
+            "resultArea"
+        );
+
+    if (!resultArea) {
+
+        console.error(
+            "❌ resultArea が見つかりません"
+        );
+
+        return;
+    }
+
+    resultArea.innerHTML = "";
+
+    resultArea.style.display =
+        "block";
+
+    resultArea.innerHTML = `
+        <h2>🌸 英語の復習おつかれさまでした！</h2>
+        <p><strong>復習結果：${englishReviewScore} / ${currentEnglishQuiz.length} 問正解</strong></p>
+    `;
+
+    if (englishWrongList.length > 0) {
+
+        resultArea.innerHTML += `
+            <h3>📉 もう一度復習しましょう</h3>
+            <button onclick="startEnglishReview()">📚 残り問題を復習する</button>
+        `;
+
+    } else {
+
+        resultArea.innerHTML += `
+            <h3>🎉 苦手な単語を全部克服しました！</h3>
+        `;
+    }
+
+    resultArea.innerHTML += `
+        <button onclick="backToGrade()">🎓 学年選択へ戻る</button>
+        <button onclick="backToHome()">🏠 ホームへ戻る</button>
+    `;
+
+    console.log(
+        "🌸 英語復習結果画面表示完了"
+    );
+
+}
+
 function setupEnterKey() {
 
     const input = document.getElementById("answerInput");
 
     if (!input) return;
 
+    // 🌸 未回答の時：入力欄にフォーカスがある状態でEnterを押すと
+    // 今まで通り「こたえる」を送信する
     input.onkeydown = function (e) {
 
         if (e.key !== "Enter") return;
 
+        // 🌸 日本語IME変換確定のEnterでは送信しない
+        if (e.isComposing) return;
+
         // 🌸 ブラウザの既定動作を止める
         e.preventDefault();
+
+        // 🌸 バグ修正：ここで送信した直後、このEnterイベントが
+        // documentまでバブリングすると、下の「次の問題」用リスナーが
+        // 同じ1回のEnterで即座に反応してしまい、正解／不正解の
+        // フィードバックを見る間もなく次の問題へ進んでしまう。
+        // このEnterは「回答の送信」だけに使うよう、ここで止める。
+        e.stopPropagation();
 
         if (reviewMode) {
 
@@ -7329,6 +8121,75 @@ function setupEnterKey() {
 }
 
     };
+
+    // =========================================
+    // 🌸 バグ修正：回答後は answerInput が disabled になり
+    // 上のリスナーが反応しなくなるため、「次の問題」へ進む操作は
+    // documentレベルのEnterで別途拾う。ボタンはそのまま残し、
+    // キーボードでも進められるようにする追加の手段として扱う。
+    // （理科の複雑な分岐・国語の漢字ボード・復習モードは対象外。
+    // 　英語・理科・通常の算数だけを対象にする）
+    // =========================================
+
+    document.addEventListener("keydown", function (e) {
+
+        if (e.key !== "Enter") return;
+
+        if (e.isComposing) return;
+
+        // 🌸 すでにボタン等にフォーカスがある時は、ブラウザ標準の
+        // 「Enter＝クリック」動作に任せる（二重発火防止）
+        const active = document.activeElement;
+
+        if (
+            active &&
+            (active.tagName === "BUTTON" || active.tagName === "A")
+        ) {
+            return;
+        }
+
+        if (englishMode && englishAnswered) {
+
+            const btn = document.getElementById("englishAnswerBtn");
+
+            if (btn && btn.style.display !== "none" && !btn.disabled) {
+                e.preventDefault();
+                btn.click();
+            }
+
+        } else if (rikaMode && rikaAnswered) {
+
+            const btn = document.getElementById("rikaAnswerBtn");
+
+            if (btn && btn.style.display !== "none" && !btn.disabled) {
+                e.preventDefault();
+                btn.click();
+            }
+
+        } else if (
+            !reviewMode &&
+            !rikaMode &&
+            !englishMode &&
+            !kokugoMode &&
+            mathKeypadAction === "next"
+        ) {
+
+            const okBtn = document.getElementById("mathOKBtn");
+
+            const keypadEl = document.getElementById("mathKeypad");
+
+            if (
+                okBtn &&
+                keypadEl &&
+                keypadEl.style.display !== "none"
+            ) {
+                e.preventDefault();
+                okBtn.click();
+            }
+
+        }
+
+    });
 
 }
 
@@ -8009,13 +8870,25 @@ function showReviewQuestion() {
 
         if (keypad) {
 
+            // 🌸 バグ修正：復習モードの問題データは
+            // { question, correct, ... } という形だが、
+            // getAnswerType() は通常モードと同じ { q, a, grade, ... }
+            // の形を前提にしている。そのまま渡すと answer(=question.a)
+            // や grade が undefined になり、中1などの学年別の
+            // キーボード判定ができず、違うテンキーが出てしまう。
             const answerType =
-                getAnswerType(
-                    currentQuestion
-                );
+                getAnswerType({
+                    type: currentQuestion.type,
+                    a: currentQuestion.correct,
+                    grade: currentQuestion.grade,
+                    inputType: currentQuestion.inputType
+                });
 
+            // 🌸 「数学用語12択」で正解を必ず選択肢に入れるため、
+            // 復習問題の正解（currentQuestion.correct）を明示的に渡す
             createMathKeypad(
-                answerType
+                answerType,
+                currentQuestion.correct
             );
 
             keypad.style.display =
@@ -8117,9 +8990,32 @@ function submitReviewAnswer() {
         case "divide":
         case "decimal":
         case "area":
-        case "volume":
             ok = Number(ans) === Number(correct);
             break;
+
+        case "volume": {
+
+            // 🌸 バグ修正：中学の体積の答えは「96cm³」「45πcm³」のように
+            // 単位やπを含む文字列のことがあり、Number()で比較すると
+            // 常にNaN同士の比較になって正解でも不正解扱いになっていた。
+            // 小学生の体積問題（答えが数字だけ）は今まで通り数値比較、
+            // 単位を含む答えは他の図形問題と同じ完全一致／表記ゆれ判定にする。
+            const correctIsPlainNumber =
+                /^-?\d+(?:\.\d+)?$/.test(
+                    String(correct).trim()
+                );
+
+            if (correctIsPlainNumber) {
+                ok = Number(ans) === Number(correct);
+            } else {
+                ok =
+                    ans === correct ||
+                    isFuzzyTextMatch(raw, currentQuestion.correct);
+            }
+
+            break;
+
+        }
 
         case "remainder":
             ok = ans === correct;
@@ -12298,6 +13194,18 @@ function getAnswerType(question) {
 
 
         // =========================
+        // 🌸 方程式（式を立てて解く）
+        // 例：x+7=15、x=8
+        // =========================
+
+        if (question.type === "equation") {
+
+            return "equation";
+
+        }
+
+
+        // =========================
         // 🌸 正負の数
         // =========================
 
@@ -12353,6 +13261,34 @@ function getAnswerType(question) {
 
 
         // =========================
+        // 🌸 立体の体積
+        // 例：96cm³ / 45πcm³ / 60
+        // πの有無に関わらず、数字＋cm・cm²・cm³が
+        // 押せるテンキー（pi）を使う。
+        // 🌸 バグ修正：「type: volume」は空間図形の単元全体に
+        // 使われていて、「高さ」「同じ数」「長方形」のような
+        // 数字以外の用語が答えの問題も混ざっている。答えが
+        // 数字（＋単位・π）の形をしている時だけ pi テンキーにし、
+        // それ以外は下の数学用語チェックに進ませる。
+        // =========================
+
+        if (
+            question.type === "volume" &&
+            (
+                typeof answer === "number" ||
+                (
+                    typeof answer === "string" &&
+                    /^-?\d/.test(answer.trim())
+                )
+            )
+        ) {
+
+            return "pi";
+
+        }
+
+
+        // =========================
         // 🌸 数値判定
         // 例：
         // 90
@@ -12371,6 +13307,24 @@ function getAnswerType(question) {
         ) {
 
             return "number";
+
+        }
+
+        // =========================
+        // 🌸 分数の倍（比例・反比例など）
+        // 例：
+        // 1/2倍
+        // 2倍
+        // =========================
+
+        if (
+            typeof answer === "string" &&
+            /^\d+(?:\/\d+)?倍$/.test(
+                answer.trim()
+            )
+        ) {
+
+            return "fractionTimes";
 
         }
 
@@ -12410,7 +13364,27 @@ function getAnswerType(question) {
             answer.trim() !== ""
         ) {
 
-            return "mathWord";
+            // 🌸 バグ修正：ここに来る答えが、必ずしも「数学用語12択」
+            // （mathWord）に登録された言葉とは限らない。
+            // 「1/2倍」のような、計算した数字＋単位の答えの場合は
+            // 12択に正解が存在せず、違う選択肢しか出せなくなる。
+            // 登録済みの言葉の中にある時だけ12択にして、
+            // それ以外はふつうのキーボード入力（text）にする。
+            const registeredMathWords =
+                mathKeyLayouts.mathWord.filter(
+                    key =>
+                        key !== "C" &&
+                        key !== "←" &&
+                        key !== "OK"
+                );
+
+            if (registeredMathWords.includes(answer.trim())) {
+
+                return "mathWord";
+
+            }
+
+            return "text";
 
         }
 
@@ -12607,6 +13581,27 @@ const mathKeyLayouts = {
     ],
 
     // =========================
+    // 🌸 方程式（式を立てて解く）
+    // 例：x+7=15、x=8
+    // =========================
+
+    equation: [
+
+        "7","8","9",
+
+        "4","5","6",
+
+        "1","2","3",
+
+        "0","x","=",
+
+        "+","-","、",
+
+        "C","←","OK"
+
+    ],
+
+    // =========================
     // 🌸 πを使う図形
     // =========================
 
@@ -12652,6 +13647,20 @@ const mathKeyLayouts = {
         "1","2","3",
         "0","/","C","←",
         "OK"
+    ],
+
+
+    // =========================
+    // 🌸 分数の倍（比例・反比例など）
+    // 例：1/2倍
+    // =========================
+
+    fractionTimes: [
+        "7","8","9",
+        "4","5","6",
+        "1","2","3",
+        "0","/","倍",
+        "C","←","OK"
     ],
 
 
@@ -12785,7 +13794,12 @@ mathWord: [
 // テンキー生成
 /////////////////////////////////////////////////////
 
-function createMathKeypad(type = "number") {
+// 🌸 バグ修正：中1数学の「数学用語12択」は、正解を必ず選択肢に
+// 入れるために quizState.currentQuestion.a を参照しているが、
+// 復習モードでは quizState が更新されないため、正解が選択肢に
+// 入らないことがあった。復習モードなど quizState を使わない場面では
+// correctAnswerOverride で正解を明示的に渡せるようにする。
+function createMathKeypad(type = "number", correctAnswerOverride) {
 
     const keypad =
         document.getElementById("mathKeypad");
@@ -12803,7 +13817,9 @@ function createMathKeypad(type = "number") {
 if (type === "mathWord") {
 
     const currentAnswer =
-        quizState.currentQuestion?.a;
+        correctAnswerOverride !== undefined
+            ? correctAnswerOverride
+            : quizState.currentQuestion?.a;
 
     const candidates =
         mathKeyLayouts.mathWord.filter(

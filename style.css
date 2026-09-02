@@ -337,6 +337,89 @@ button {
     align-items: flex-end;
 }
 
+/* 🌸 分数のかけ算の筆算
+   分子どうし・分母どうしのかけ算を、━━（帯分数の線と同じ横線）で
+   縦にはさんで「分数の形」で表示し、下に約分後の答えを続ける。 */
+.hissanFractionPanel {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 10px auto;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 26px;
+    font-weight: bold;
+    color: #333;
+}
+
+.hissanFracStep {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hissanFracRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+}
+
+.hissanFracGivenCalc {
+    white-space: nowrap;
+}
+
+.hissanFracBoxes {
+    display: flex;
+    gap: 3px;
+}
+
+/* 🌸 分子の段と分母の段を分ける横線（分数の線） */
+.hissanFracBar {
+    align-self: stretch;
+    border-top: 3px solid #333;
+    margin: 2px 0;
+}
+
+.hissanFracArrow {
+    font-size: 18px;
+    color: #777;
+    margin: 6px 0;
+    white-space: nowrap;
+}
+
+/* 🌸 一次方程式の筆算：移項してxを孤立させる過程を、
+   段（①②③）ごとに分けて表示する。 */
+.hissanEquationPanel {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin: 10px auto;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+}
+
+.hissanEquationStepLabel {
+    font-size: 13px;
+    font-weight: normal;
+    color: #999;
+    margin-bottom: 4px;
+}
+
+.hissanEquationRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.hissanEquationBoxes {
+    display: flex;
+    gap: 3px;
+}
+
 .hissanDivQuotientRow {
     display: flex;
     gap: 4px;
