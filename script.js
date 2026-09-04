@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.5 Stable_10_24";
+const APP_VERSION = "v7.6 Stable_09_04";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -1411,8 +1411,8 @@ function setGrade(grade) {
                 <small>中学1年 国語</small>
             `;
 
-            // 今回はまだ未実装
-            kokugoBtn.classList.add("disabled");
+            // 🌸 バグ修正：中学1年の国語データを連携
+            kokugoBtn.classList.remove("disabled");
 
         } else {
 
@@ -1800,6 +1800,11 @@ function startGrade2Kokugo() {
     const gradeNum =
         getKokugoGradeNumber();
 
+    // 🌸 バグ修正：中学1年の国語データを連携
+    const isChu1 =
+        currentUser &&
+        currentUser.grade === "grade7";
+
     const courseTitle =
         document.getElementById(
             "kokugoCourseTitle"
@@ -1808,9 +1813,11 @@ function startGrade2Kokugo() {
     if (courseTitle) {
 
         courseTitle.textContent =
-            gradeNum
-                ? `📖 国語（小学${gradeNum}年）`
-                : "📖 国語";
+            isChu1
+                ? "📖 国語（中学1年）"
+                : gradeNum
+                    ? `📖 国語（小学${gradeNum}年）`
+                    : "📖 国語";
 
     }
 
@@ -4484,6 +4491,116 @@ function tryBuildHissan(question) {
         return null;
     }
 
+    // 🌸 バグ修正：「時こくと時間」の文章題のうち、
+    // 「A分とB分をあわせると何分？」の形で答えが単純な数値のものだけ、
+    // 足し算の筆算枠を出す。「1時間20分」のような複合表記の答えや、
+    // 時こく（「午前11時」など）を答える問題は対象外（今まで通り直接入力）。
+    if (question.type === "time") {
+
+        const tm = String(question.q).match(
+            /^\s*(\d+)\s*分と(\d+)\s*分をあわせると何分\s*[？?]\s*$/
+        );
+
+        if (
+            tm &&
+            question.a !== undefined &&
+            question.a !== null &&
+            /^\d+$/.test(String(question.a).trim())
+        ) {
+
+            const boxHTML =
+                buildHissanRowBox(
+                    tm[1],
+                    tm[2],
+                    "＋",
+                    String(question.a).trim()
+                );
+
+            return {
+                html: boxHTML,
+                suffix: "分",
+                answerBoxes: true
+            };
+
+        }
+
+        return null;
+    }
+
+    // 🌸 バグ修正：「お金」の文章題のうち、
+    // ①「N円出してM円のものを買うと、おつりは何円？」（ひき算）
+    // ②「V円玉がNまいあります。ぜんぶで何円？」など（かけ算）
+    // の1回の計算で答えが出る形だけ、筆算枠を出す。硬貨が2種類混ざる
+    // 問題（「10円玉が5まいと1円玉が3まい…」等）は2段階の計算が
+    // 必要になるため、今まで通り直接入力のままにする。
+    if (question.type === "money") {
+
+        const changeMatch = String(question.q).match(
+            /^\s*(\d+)円出して(\d+)円のものを買うと、おつりは何円\s*[？?]\s*$/
+        );
+
+        if (
+            changeMatch &&
+            question.a !== undefined &&
+            question.a !== null &&
+            /^\d+$/.test(String(question.a).trim())
+        ) {
+
+            const boxHTML =
+                buildHissanRowBox(
+                    changeMatch[1],
+                    changeMatch[2],
+                    "－",
+                    String(question.a).trim()
+                );
+
+            return {
+                html: boxHTML,
+                suffix: "円",
+                answerBoxes: true
+            };
+
+        }
+
+        const coinMatch = String(question.q).match(
+            /^\s*(\d+)円玉が?(\d+)まい(?:あります。ぜんぶで|あります。|で)何円\s*[？?]\s*$/
+        );
+
+        if (
+            coinMatch &&
+            question.a !== undefined &&
+            question.a !== null &&
+            /^\d+$/.test(String(question.a).trim())
+        ) {
+
+            const coinValue = Number(coinMatch[1]);
+            const coinCount = Number(coinMatch[2]);
+
+            // 🌸 九九など、一桁どうしの単純な整数計算は筆算にせず
+            // 今まで通り表示（他の計算単元と同じルール）
+            if (Math.max(coinValue, coinCount) >= 10) {
+
+                const boxHTML =
+                    buildHissanRowBox(
+                        coinMatch[1],
+                        coinMatch[2],
+                        "×",
+                        String(question.a).trim()
+                    );
+
+                return {
+                    html: boxHTML,
+                    suffix: "円",
+                    answerBoxes: true
+                };
+
+            }
+
+        }
+
+        return null;
+    }
+
     const arithmeticTypes =
         ["add", "subtract", "multiply", "divide", "remainder", "decimal"];
 
@@ -4588,7 +4705,7 @@ function buildHissanEquationBox(question) {
 
             const signIdx = boxIndex++;
 
-            html += `<input type="text" inputmode="text" class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${signIdx}" autocomplete="off">`;
+            html += `<input type="text" inputmode="text" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${signIdx}" autocomplete="off">`;
 
         }
 
@@ -4596,7 +4713,7 @@ function buildHissanEquationBox(question) {
 
             const idx = boxIndex++;
 
-            html += `<input type="text" inputmode="numeric" class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
+            html += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
 
         });
 
@@ -4612,7 +4729,7 @@ function buildHissanEquationBox(question) {
 
         const idx = boxIndex++;
 
-        html += `<input type="text" inputmode="text" class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
+        html += `<input type="text" inputmode="text" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
 
         return html;
 
@@ -5002,7 +5119,7 @@ function buildHissanFractionMulBox(aNumStr, aDenStr, bNumStr, bDenStr, answerRaw
 
             const idx = boxIndex++;
 
-            return `<input type="text" inputmode="numeric" class="hissanAnswerBox hissanFracBox" data-hissan-idx="${idx}" autocomplete="off">`;
+            return `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox hissanFracBox" data-hissan-idx="${idx}" autocomplete="off">`;
 
         }).join("");
     };
@@ -5185,7 +5302,7 @@ function buildHissanRowBox(aStr, bStr, opSymbol, answerStr) {
         let html = `<span class="hissanOp">&nbsp;</span>`;
 
         for (let p = 0; p < maxIntLen; p++) {
-            html += `<input type="text" inputmode="numeric" class="hissanAnswerBox" data-hissan-idx="${intIdx[p]}" autocomplete="off">`;
+            html += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${intIdx[p]}" autocomplete="off">`;
         }
 
         if (hasDot) {
@@ -5193,7 +5310,7 @@ function buildHissanRowBox(aStr, bStr, opSymbol, answerStr) {
             html += `<span class="hissanDigitCell hissanDotCell">.</span>`;
 
             for (let p = 0; p < maxFracLen; p++) {
-                html += `<input type="text" inputmode="numeric" class="hissanAnswerBox" data-hissan-idx="${fracIdx[p]}" autocomplete="off">`;
+                html += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${fracIdx[p]}" autocomplete="off">`;
             }
 
         }
@@ -5300,7 +5417,7 @@ function buildHissanDivisionBox(aStr, bStr, answerStr) {
     let quotientHTML = "";
 
     for (let p = 0; p < ansIntLen; p++) {
-        quotientHTML += `<input type="text" inputmode="numeric" class="hissanAnswerBox" data-hissan-idx="${quotientIntIdx[p]}" autocomplete="off">`;
+        quotientHTML += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${quotientIntIdx[p]}" autocomplete="off">`;
     }
 
     if (ansFracPart !== "") {
@@ -5308,7 +5425,7 @@ function buildHissanDivisionBox(aStr, bStr, answerStr) {
         quotientHTML += `<span class="hissanDigitCell hissanDotCell">.</span>`;
 
         for (let p = 0; p < ansFracLen; p++) {
-            quotientHTML += `<input type="text" inputmode="numeric" class="hissanAnswerBox" data-hissan-idx="${quotientFracIdx[p]}" autocomplete="off">`;
+            quotientHTML += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${quotientFracIdx[p]}" autocomplete="off">`;
         }
 
     }
@@ -5328,7 +5445,7 @@ function buildHissanDivisionBox(aStr, bStr, answerStr) {
     let productHTML = "";
 
     for (let p = 0; p < aIntLen; p++) {
-        productHTML += `<input type="text" inputmode="numeric" class="hissanAnswerBox" data-hissan-idx="${productIntIdx[p]}" autocomplete="off">`;
+        productHTML += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${productIntIdx[p]}" autocomplete="off">`;
     }
 
     if (aHasDot) {
@@ -5336,7 +5453,7 @@ function buildHissanDivisionBox(aStr, bStr, answerStr) {
         productHTML += `<span class="hissanDigitCell hissanDotCell">.</span>`;
 
         for (let p = 0; p < aFracLen; p++) {
-            productHTML += `<input type="text" inputmode="numeric" class="hissanAnswerBox" data-hissan-idx="${productFracIdx[p]}" autocomplete="off">`;
+            productHTML += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${productFracIdx[p]}" autocomplete="off">`;
         }
 
     }
@@ -5365,7 +5482,7 @@ function buildHissanDivisionBox(aStr, bStr, answerStr) {
 
         remainderHTML +=
             remP >= 0
-                ? `<input type="text" inputmode="numeric" class="hissanAnswerBox" data-hissan-idx="${remainderIntIdx[remP]}" autocomplete="off">`
+                ? `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${remainderIntIdx[remP]}" autocomplete="off">`
                 : `<span class="hissanDivBlankCell"></span>`;
 
     }
@@ -5375,7 +5492,7 @@ function buildHissanDivisionBox(aStr, bStr, answerStr) {
         remainderHTML += `<span class="hissanDigitCell hissanDotCell">.</span>`;
 
         for (let p = 0; p < aFracLen; p++) {
-            remainderHTML += `<input type="text" inputmode="numeric" class="hissanAnswerBox" data-hissan-idx="${remainderFracIdx[p]}" autocomplete="off">`;
+            remainderHTML += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${remainderFracIdx[p]}" autocomplete="off">`;
         }
 
     }
@@ -6623,8 +6740,10 @@ function getKokugoDatabase() {
         case "grade6":
             return grade6KokugoQuestions;
 
+        case "grade7":
+            return chu1KokugoQuestions;
+
         default:
-            // 🌸 中学1年など、国語データが未対応の学年
             return [];
     }
 
@@ -14057,6 +14176,19 @@ if (key === "あまり") {
                             // 🌸 回答欄が空の時は筆算の最後のマスへ戻る
                             focusTarget = lastHissanBox;
 
+                        } else if (
+                            !isHissanAnswerBox &&
+                            type === "mathWord"
+                        ) {
+
+                            // 🌸 バグ修正：数学用語12択はボタン1つが単語まるごと
+                            // 1回のクリックで入力されるため、←を1文字削除に
+                            // すると、前の単語の残りが消し切れないまま
+                            // 別の単語を選び直した時に連結してしまう
+                            // （例：「図形の移動（合同変換」＋「合同変換」）。
+                            // そのため数学用語12択では←は全消去にする。
+                            target.value = "";
+
                         } else {
 
                             target.value =
@@ -14164,6 +14296,16 @@ submitAnswer();
                             focusTarget = input;
 
                         }
+
+                    } else if (type === "mathWord") {
+
+                        // 🌸 バグ修正：数学用語12択はボタン1つ＝回答の単語1つ
+                        // なので、押すたびに追記(+=)せず置き換える。
+                        // 追記のままだと、前に選んだ単語が消し切れていない
+                        // ときに新しい単語と連結し、二重になった回答
+                        // （例：「図形の移動（合同変換合同変換」）が
+                        // そのまま送信されてしまっていた。
+                        target.value = key;
 
                     } else {
 
