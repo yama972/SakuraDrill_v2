@@ -293,7 +293,7 @@ const chu1EigoQuestions = [
     unit: "be動詞",
     type: "grammar",
     q: "\"Are you a student?\" に \"いいえ、ちがいます。\" と答えるときの正しい形は？",
-    a: "No, I am not.",
+    a: "No, I am not.（No, I’m not.）",
     memo: "be動詞の疑問文の否定の答えは、主語＋am/is/are notの形です。"
   },
   {
@@ -614,7 +614,7 @@ const chu1EigoQuestions = [
     type: "grammar",
     q: "\"Don't run in the classroom.\" のように、「〜してはいけない」という否定の命令文は何で始める？",
     a: "Don't",
-    memo: "否定の命令文はDon'tで始めます。"
+    memo: "否定の命令文はDon'tで始めます。「Don't」「Let's」のような短縮形そのものを覚えることがネライです。"
   },
   {
     grade: "中1",
@@ -637,7 +637,7 @@ const chu1EigoQuestions = [
     unit: "can（助動詞）",
     type: "grammar",
     q: "\"I can swim.\" の意味は？",
-    a: "私は泳ぐことができる",
+    a: "私は泳ぐことができる（私は泳げる）（私は泳げます）",
     memo: "canは「〜することができる」という意味を表す助動詞です。"
   },
   {
@@ -645,7 +645,7 @@ const chu1EigoQuestions = [
     unit: "can（助動詞）",
     type: "grammar",
     q: "\"Can you play the piano?\" の意味は？",
-    a: "あなたはピアノをひくことができますか",
+    a: "あなたはピアノをひくことができますか（あなたはピアノを弾けますか）（あなたはピアノをひけますか）",
     memo: "canの疑問文は「〜することができますか」という意味になります。"
   },
   {
@@ -653,7 +653,7 @@ const chu1EigoQuestions = [
     unit: "can（助動詞）",
     type: "grammar",
     q: "\"He can not (cannot/can't) speak French.\" の意味は？",
-    a: "彼はフランス語を話すことができない",
+    a: "彼はフランス語を話すことができない（彼はフランス語を話せない）",
     memo: "can notやcan'tは「〜することができない」という否定の意味です。"
   },
   {
@@ -677,7 +677,7 @@ const chu1EigoQuestions = [
     unit: "can（助動詞）",
     type: "grammar",
     q: "\"She can cook well.\" の意味は？",
-    a: "彼女は上手に料理をすることができる",
+    a: "彼女は上手に料理をすることができる（彼女は上手に料理ができる）（彼女は料理が上手です）（彼女は料理をするのが上手です）",
     memo: "canは「〜することができる」という能力を表します。"
   },
   {

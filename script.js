@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.6 Stable_09_04";
+const APP_VERSION = "v7.7 Stable_09_05";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -7573,17 +7573,40 @@ function showEnglishQuestion() {
     answerInput.setAttribute("autocorrect", "off");
     answerInput.setAttribute("spellcheck", "false");
 
-    // 🌸 バグ修正：日本語IME（ひらがな入力）がオンのままだと
-    // 英単語が正しく入力できないため、ブラウザに「英語の入力欄」
-    // であることを伝えるヒントを設定する。
-    // ※ ime-mode はChromium系ブラウザでは廃止されており、
-    // 　 Webページ側からOSのIMEを強制的にオフへ切り替える
-    // 　 標準的な方法は現在は存在しないため、ヒント属性と
-    // 　 画面上の案内で半角英数字入力をうながす。
-    answerInput.setAttribute("lang", "en");
-    answerInput.setAttribute("inputmode", "text");
-    answerInput.placeholder =
-        "💡 半角英数字（ABC）で入力してね";
+    // 🌸 バグ修正：「"be動詞+動詞のing形"で表される時制を
+    // 何という？」のように、英語の問題でも答えそのものは
+    // 日本語（文法用語など）の問題がある。そうした問題にまで
+    // 「半角英数字で入力してね」と案内すると、何を書けば
+    // いいのか分からなくなってしまう。答え（正解）に日本語が
+    // 含まれる問題かどうかで、案内文とIMEヒントを切り替える。
+    const expectsJapaneseAnswer =
+        typeof currentEnglishQuestion.a === "string" &&
+        /[ぁ-んァ-ヶ一-龠]/.test(currentEnglishQuestion.a);
+
+    if (expectsJapaneseAnswer) {
+
+        // 🌸 答えが日本語の問題は、日本語入力を妨げないように
+        // 英語専用のヒントは付けない。
+        answerInput.removeAttribute("lang");
+        answerInput.setAttribute("inputmode", "text");
+        answerInput.placeholder =
+            "💡 日本語で入力してね";
+
+    } else {
+
+        // 🌸 バグ修正：日本語IME（ひらがな入力）がオンのままだと
+        // 英単語が正しく入力できないため、ブラウザに「英語の入力欄」
+        // であることを伝えるヒントを設定する。
+        // ※ ime-mode はChromium系ブラウザでは廃止されており、
+        // 　 Webページ側からOSのIMEを強制的にオフへ切り替える
+        // 　 標準的な方法は現在は存在しないため、ヒント属性と
+        // 　 画面上の案内で半角英数字入力をうながす。
+        answerInput.setAttribute("lang", "en");
+        answerInput.setAttribute("inputmode", "text");
+        answerInput.placeholder =
+            "💡 半角英数字（ABC）で入力してね";
+
+    }
 
     feedback.textContent = "";
 
@@ -7675,10 +7698,15 @@ function normalizeEnglishAnswer(text) {
         .trim()
         // 🌸 カーブクォートをまっすぐなアポストロフィに統一
         .replace(/[’‘]/g, "'")
+        // 🌸 バグ修正：「No, I am not.」の「,」を省いて
+        // 「no i am not」と答えても、文の内容自体は合っている。
+        // コンマ・ピリオドなどの句読点は、文中・文末を問わず
+        // 内容の正誤には関係ないので、位置に関わらず除去する
+        // （文末だけを見ていた以前の判定だと、"No" の直後の
+        // 「,」を省いただけで不正解になってしまっていた）。
+        .replace(/[。.,！!？?]/g, "")
         // 🌸 連続する空白を1つに
         .replace(/\s+/g, " ")
-        // 🌸 文末の記号を除去
-        .replace(/[。.,！!？?]+$/g, "")
         .toLowerCase();
 
 }
@@ -12423,8 +12451,27 @@ function checkPiAnswer(correct, answer) {
 
 function checkNormal(correct, ans){
 
-    return Number(ans) === Number(correct)
-        || ans === correct;
+    if (
+        Number(ans) === Number(correct) ||
+        ans === correct
+    ) {
+        return true;
+    }
+
+    // 🌸 バグ修正：算数以外の記述式問題（英語の日本語訳など）は、
+    // 完全一致でなくても「揺らぎ判定」で正解にする。
+    // 正解が日本語の文章を含む場合だけ判定する
+    // （"Yes, I can." のような英語だけの答えが必要な問題の
+    // 　厳密さには影響しない）。
+    if (
+        typeof correct === "string" &&
+        /[ぁ-んァ-ヶ一-龠]/.test(correct) &&
+        isFuzzyTextMatch(ans, correct)
+    ) {
+        return true;
+    }
+
+    return false;
 
 }
 
@@ -12620,6 +12667,37 @@ function normalizeForFuzzyMatch(text) {
 
 }
 
+// 🌸 バグ修正：英語の翻訳問題などで、正解が「〜ていない」（普通の
+// 言い方）でも、ユーザーが「〜ていません」（ていねいな言い方）と
+// 答えた場合、意味は同じなのに文字が一致せず不正解になっていた。
+// 「ている」の部分（補助動詞「いる」）は、どの動詞が前についても
+// 「います／いません」⇔「いる／いない」の変換ルールが変わらないため、
+// この部分だけは安全に丸ごと言い換えても意味がずれない。
+// （例）「寝ていない」⇔「寝ていません」、
+// 　　　「話している」⇔「話しています」
+function normalizePoliteness(text) {
+
+    let result =
+        String(text)
+            .replace(/ていません/g, "ていない")
+            .replace(/ています/g, "ている");
+
+    // 🌸 バグ修正：「話せない」（普通形）と「話せません」（ていねい形）
+    // のような、一段活用の動詞（見られる・食べられる・話せる・できる
+    // など、canの可能形を含む）の否定形も、意味は同じなのに
+    // 文字が一致せず不正解になっていた。
+    // 一段活用の動詞は「ない」も「ません」も同じ語幹につくため
+    // （話せ＋ない／話せ＋ません）、文末が「ない」なら「ません」に
+    // そろえても安全（五段活用の動詞は語幹が変わるため対象外だが、
+    // その場合はそもそも他の変換候補と一致しないだけで、誤って
+    // 正解にしてしまうことはない）。
+    result =
+        result.replace(/ない$/, "ません");
+
+    return result;
+
+}
+
 // 🌸 「つぶが大きい土（すな）」のように、正解の中に
 // 括弧つきの別解・言い換え（すな、影、はかり…）が
 // 含まれている場合、括弧の中身や、括弧を取り除いた
@@ -12670,6 +12748,17 @@ function coreFuzzyMatch(userAnswer, correctText) {
 
     if (user === correct) {
         return true;
+    }
+
+    // 🌸 「〜ている／〜ていない」のていねいさ（普通形／ます形）の
+    // ゆれを許容する
+    if (
+        normalizePoliteness(user) ===
+        normalizePoliteness(correct)
+    ) {
+
+        return true;
+
     }
 
     // 🌸 漢字とひらがな（読み）の表記ゆれを許容する
