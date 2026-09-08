@@ -6,9 +6,53 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="style.css">
+    <!-- 🌸 更新をすぐ反映させるためのキャッシュ対策 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <link rel="stylesheet" href="style.css?v=20260908-1">
 
     <title>SakuraDrill</title>
+
+    <!-- 🌸 自動更新チェック
+         version.txt の中身と、このページに埋め込まれたビルド番号を比べて、
+         新しいバージョンが公開されていたら自動的に読み込み直す。
+         ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
+    <script>
+        window.SAKURA_BUILD = "20260908-1";
+        (function () {
+            fetch("version.txt", { cache: "no-store" })
+                .then(function (res) { return res.text(); })
+                .then(function (latest) {
+                    latest = latest.trim();
+
+                    if (!latest || latest === window.SAKURA_BUILD) {
+                        return;
+                    }
+
+                    // 🌸 同じバージョンへの更新を既に試したのに、まだ古いままの場合は
+                    //     何度もリロードを繰り返さないようにする（無限ループ防止）
+                    var alreadyTried = null;
+                    try {
+                        alreadyTried = sessionStorage.getItem("sakuraUpdateTried");
+                    } catch (e) {}
+
+                    if (alreadyTried === latest) {
+                        return;
+                    }
+
+                    try {
+                        sessionStorage.setItem("sakuraUpdateTried", latest);
+                    } catch (e) {}
+
+                    location.replace(location.pathname + "?_r=" + Date.now());
+                })
+                .catch(function () {
+                    // 🌸 オフラインなどで確認できない時は、そのまま今の画面を使う
+                });
+        })();
+    </script>
 </head>
 
 <body>
@@ -1721,7 +1765,7 @@
                         <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
-                        <script src="script.js"></script>
+                        <script src="script.js?v=20260908-1"></script>
 
 
                         
