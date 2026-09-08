@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.7 Stable_09_05";
+const APP_VERSION = "★★★★TEST★★★★";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -753,6 +753,26 @@ function restoreNextBtnHome() {
     }
 }
 
+// 🌸 バグ修正：スクロールを減らすため、「考え方／解説」(#feedback) を
+// 教科・問題タイプに応じてキーボード（テンキー・筆算／国語ボード）の
+// すぐ横（下）へ移動させる。移動前の元の位置も、nextBtn と同じ要領で
+// 覚えておき、教科を切り替えたときは元の位置へ戻す。
+const feedbackHomeParent = feedback.parentElement;
+const feedbackHomeNext = feedback.nextElementSibling;
+
+function restoreFeedbackHome() {
+    if (feedback.parentElement !== feedbackHomeParent) {
+        feedbackHomeParent.insertBefore(feedback, feedbackHomeNext);
+    }
+}
+
+function moveFeedbackTo(targetId) {
+    const target = document.getElementById(targetId);
+    if (target && feedback.parentElement !== target) {
+        target.appendChild(feedback);
+    }
+}
+
 const quizArea = document.getElementById("quizArea");
 const resultArea = document.getElementById("resultArea");
 const appTitle = document.getElementById("appTitle");
@@ -870,6 +890,9 @@ function clearScreens() {
     // 🌸 国語画面用に移動させていた nextBtn を元の位置へ戻す
     restoreNextBtnHome();
 
+    // 🌸 教科切り替え時は「考え方／解説」も元の位置へ戻す
+    restoreFeedbackHome();
+
     const screens = [
 
         "homeScreen",
@@ -901,7 +924,10 @@ function clearScreens() {
         "japanFinishArea",
 
         // 🌸 Engine20 学習レポート
-        "studyRecordArea"
+        "studyRecordArea",
+
+        // 🌸 うんちくクイズ（一服タイム）
+        "triviaArea"
 
     ];
 
@@ -911,6 +937,178 @@ function clearScreens() {
             el.style.display = "none";
         }
     });
+
+}
+
+/* =========================================================
+   🌸 うんちくクイズ（一服タイム）
+   47都道府県の豆知識クイズ（trivia47Questions、471問）を、
+   採点・Sakura Point・学習レポート・復習リストにいっさい
+   記録せず、気軽に楽しむための独立した機能。
+   answerInput・mathKeypad など、他の教科の仕組みは使わない。
+========================================================= */
+
+let triviaLastIndex = -1;
+
+function startTriviaBreak() {
+
+    clearScreens();
+
+    const area = document.getElementById("triviaArea");
+
+    if (!area) return;
+
+    area.style.display = "block";
+
+    triviaLastIndex = -1;
+
+    renderTriviaQuestion();
+
+}
+
+function renderTriviaQuestion() {
+
+    const prefTagEl = document.getElementById("triviaPrefTag");
+    const questionTextEl = document.getElementById("triviaQuestionText");
+    const choicesEl = document.getElementById("triviaChoices");
+    const feedbackEl = document.getElementById("triviaFeedback");
+    const nextBtn = document.getElementById("triviaNextBtn");
+
+    if (!questionTextEl || !choicesEl) return;
+
+    // 🌸 データがまだ読み込まれていない時の保険
+    if (
+        typeof trivia47Questions === "undefined" ||
+        !Array.isArray(trivia47Questions) ||
+        trivia47Questions.length === 0
+    ) {
+
+        if (prefTagEl) prefTagEl.textContent = "";
+        questionTextEl.textContent = "🌸 うんちくクイズのデータが見つかりませんでした。";
+        choicesEl.innerHTML = "";
+        if (feedbackEl) feedbackEl.innerHTML = "";
+        if (nextBtn) nextBtn.style.display = "none";
+
+        return;
+
+    }
+
+    // 🌸 直前と同じ問題が連続で出ないようにする（2問目以降）
+    let index = Math.floor(Math.random() * trivia47Questions.length);
+
+    if (trivia47Questions.length > 1) {
+
+        while (index === triviaLastIndex) {
+            index = Math.floor(Math.random() * trivia47Questions.length);
+        }
+
+    }
+
+    triviaLastIndex = index;
+
+    const question = trivia47Questions[index];
+
+    if (prefTagEl) {
+        prefTagEl.textContent = `🗾 ${question.pref}｜${question.genre}`;
+    }
+
+    questionTextEl.textContent = question.q;
+
+    if (feedbackEl) {
+        feedbackEl.innerHTML = "";
+        feedbackEl.style.color = "";
+    }
+
+    if (nextBtn) {
+        nextBtn.style.display = "none";
+    }
+
+    // 🌸 選択肢は毎回シャッフルして表示する
+    // （正解の文字列そのものを照合するので、並び順は自由に変えてよい）
+    const shuffledChoices = shuffleArray(question.choices);
+
+    choicesEl.innerHTML = "";
+    choicesEl.dataset.answered = "false";
+
+    shuffledChoices.forEach(choiceText => {
+
+        const btn = document.createElement("button");
+
+        btn.type = "button";
+        btn.className = "triviaChoiceBtn";
+        btn.textContent = choiceText;
+
+        btn.addEventListener("click", () => {
+            handleTriviaAnswer(choiceText, question);
+        });
+
+        choicesEl.appendChild(btn);
+
+    });
+
+}
+
+function handleTriviaAnswer(selectedChoice, question) {
+
+    const choicesEl = document.getElementById("triviaChoices");
+    const feedbackEl = document.getElementById("triviaFeedback");
+    const nextBtn = document.getElementById("triviaNextBtn");
+
+    if (!choicesEl) return;
+
+    // 🌸 一度答えたら、同じ問題ではもう選べないようにする
+    if (choicesEl.dataset.answered === "true") return;
+
+    choicesEl.dataset.answered = "true";
+
+    const isCorrect = selectedChoice === question.a;
+
+    // 🌸 正解・不正解の色分けと、選べなくする処理
+    Array.from(choicesEl.children).forEach(btn => {
+
+        btn.disabled = true;
+
+        if (btn.textContent === question.a) {
+            btn.classList.add("triviaChoiceCorrect");
+        } else if (btn.textContent === selectedChoice) {
+            btn.classList.add("triviaChoiceWrong");
+        }
+
+    });
+
+    if (feedbackEl) {
+
+        feedbackEl.innerHTML = `
+            ${isCorrect ? "⭕ せいかい！" : "❌ ざんねん…"}
+            <br><br>
+            💡 ${question.memo || ""}
+        `;
+
+        feedbackEl.style.color = isCorrect ? "green" : "#c0392b";
+
+    }
+
+    playSound(isCorrect ? "correct" : "wrong");
+
+    if (nextBtn) {
+        nextBtn.style.display = "inline-block";
+    }
+
+}
+
+function showNextTrivia() {
+    renderTriviaQuestion();
+}
+
+function backFromTrivia() {
+
+    clearScreens();
+
+    const subjectArea = document.getElementById("subjectArea");
+
+    if (subjectArea) {
+        subjectArea.style.display = "block";
+    }
 
 }
 
@@ -1346,6 +1544,16 @@ function setGrade(grade) {
         // 🌸 中学1年
         currentUnit = "juniorHigh1";
 
+    } else if (grade === "grade8") {
+
+        // 🌸 中学2年
+        currentUnit = "juniorHigh2";
+
+    } else if (grade === "grade9") {
+
+        // 🌸 中学3年
+        currentUnit = "juniorHigh3";
+
     }
 
 
@@ -1365,7 +1573,7 @@ function setGrade(grade) {
 
 
     // =========================
-    // 🌸 中学1年は「算数」→「数学」
+    // 🌸 中学1〜3年は「算数」→「数学」
     // =========================
 
     const mathBtn =
@@ -1373,12 +1581,15 @@ function setGrade(grade) {
 
     if (mathBtn) {
 
-        if (grade === "grade7") {
+        const mathJuniorHighNum =
+            getJuniorHighNumber();
+
+        if (mathJuniorHighNum) {
 
             mathBtn.innerHTML = `
                 📐<br>
                 <strong>数学</strong><br>
-                <small>中学1年 数学</small>
+                <small>中学${mathJuniorHighNum}年 数学</small>
             `;
 
         } else {
@@ -1403,15 +1614,18 @@ function setGrade(grade) {
 
     if (kokugoBtn) {
 
-        if (grade === "grade7") {
+        const kokugoJuniorHighNum =
+            getJuniorHighNumber();
+
+        if (kokugoJuniorHighNum) {
 
             kokugoBtn.innerHTML = `
                 📖<br>
                 <strong>国語</strong><br>
-                <small>中学1年 国語</small>
+                <small>中学${kokugoJuniorHighNum}年 国語</small>
             `;
 
-            // 🌸 バグ修正：中学1年の国語データを連携
+            // 🌸 バグ修正：中学1〜3年の国語データを連携
             kokugoBtn.classList.remove("disabled");
 
         } else {
@@ -1800,10 +2014,9 @@ function startGrade2Kokugo() {
     const gradeNum =
         getKokugoGradeNumber();
 
-    // 🌸 バグ修正：中学1年の国語データを連携
-    const isChu1 =
-        currentUser &&
-        currentUser.grade === "grade7";
+    // 🌸 バグ修正：中学1〜3年の国語データを連携
+    const juniorHighNum =
+        getJuniorHighNumber();
 
     const courseTitle =
         document.getElementById(
@@ -1813,8 +2026,8 @@ function startGrade2Kokugo() {
     if (courseTitle) {
 
         courseTitle.textContent =
-            isChu1
-                ? "📖 国語（中学1年）"
+            juniorHighNum
+                ? `📖 国語（中学${juniorHighNum}年）`
                 : gradeNum
                     ? `📖 国語（小学${gradeNum}年）`
                     : "📖 国語";
@@ -2540,6 +2753,9 @@ function showKokugoQuestion() {
 
         answerInput.readOnly =
             false;
+
+        // 🌸 国語ボードを使わない問題では「考え方」は元の位置へ
+        restoreFeedbackHome();
     }
 
     // =================================================
@@ -2736,7 +2952,10 @@ function createKokugoReadingBoard(correctAnswer) {
     // =========================================
 
     board.style.display =
-        "block";
+        "flex";
+
+    // 🌸 「解説」をボードの右へ移動
+    moveFeedbackTo("kokugoReadingFeedbackSlot");
 
 }
 
@@ -3308,7 +3527,10 @@ function showKokugoWritingSVG(kanji) {
     }
 
     // 🌸 漢字書きボードを表示
-    board.style.display = "block";
+    board.style.display = "flex";
+
+    // 🌸 「解説」をボードの右へ移動
+    moveFeedbackTo("kokugoWritingFeedbackSlot");
 
     // 🌸 お手本エリアをクリア
     target.innerHTML = "";
@@ -3559,7 +3781,10 @@ function createKokugoWritingBoard(kanji) {
     // 🌸 ボード表示
     // =================================================
 
-    board.style.display = "block";
+    board.style.display = "flex";
+
+    // 🌸 「解説」をボードの右へ移動
+    moveFeedbackTo("kokugoWritingFeedbackSlot");
 
     // =================================================
     // 🌸 お手本エリア
@@ -4491,6 +4716,27 @@ function tryBuildHissan(question) {
         return null;
     }
 
+    // 🌸 同類項をまとめる問題（例：「4x + 3 - 2x + 5 を計算すると？」）：
+    // かっこの展開が必要な問題（例：「5(x-2) - 3x」）は、展開の手順が
+    // 別に必要になるため、いったん対象外（今まで通り直接入力）。
+    if (question.type === "algebra") {
+
+        const algebraHTML =
+            buildHissanCombineLikeTermsBox(question);
+
+        if (algebraHTML) {
+
+            return {
+                html: algebraHTML,
+                suffix: "",
+                answerBoxes: true
+            };
+
+        }
+
+        return null;
+    }
+
     // 🌸 バグ修正：「時こくと時間」の文章題のうち、
     // 「A分とB分をあわせると何分？」の形で答えが単純な数値のものだけ、
     // 足し算の筆算枠を出す。「1時間20分」のような複合表記の答えや、
@@ -4601,6 +4847,48 @@ function tryBuildHissan(question) {
         return null;
     }
 
+    // 🌸 立体の体積の文章題：底面積・高さなど、必要な数を
+    // 問題文から取り出して、かけ算（・わり算）を1段階ずつ
+    // 筆算枠で見せる。球の体積・表面積（4/3×π×半径³、
+    // 4×π×半径²）は公式が複雑になるため対象外（今まで通り
+    // 直接入力）。
+    if (question.type === "volume") {
+
+        const volumeHTML =
+            buildHissanVolumeBox(question);
+
+        if (volumeHTML) {
+
+            return {
+                html: volumeHTML,
+                suffix: "",
+                answerBoxes: true
+            };
+
+        }
+
+        return null;
+    }
+
+    // 🌸 平面図形（円の面積・円周など。円周率はπとする＝答えにπが残る）
+    if (question.type === "geometry") {
+
+        const geometryHTML =
+            buildHissanGeometryBox(question);
+
+        if (geometryHTML) {
+
+            return {
+                html: geometryHTML,
+                suffix: "",
+                answerBoxes: true
+            };
+
+        }
+
+        return null;
+    }
+
     const arithmeticTypes =
         ["add", "subtract", "multiply", "divide", "remainder", "decimal"];
 
@@ -4679,6 +4967,395 @@ function tryBuildHissan(question) {
 }
 
 
+// 🌸 バグ修正：buildHissanRowBox・buildHissanDivisionBox は、
+// それぞれ単独で使われる前提で data-hissan-idx を 0 から
+// 振り直してしまう。体積の筆算のように、複数の段（例：
+// 「たて×よこ」→「×高さ」）を1つの筆算パネルに続けて
+// 表示すると、段ごとに idx が 0 に戻って重複し、テンキーの
+// マス移動（次のマスへ進む・← で前のマスへ戻るなど）が
+// 正しく動かなくなる。1つの段のHTMLを作ったあとにこの関数で
+// idx を付け直し、次の段の開始番号を返す。
+function renumberHissanBoxes(html, startIdx) {
+
+    let maxIdx = -1;
+
+    const renumbered = html.replace(
+        /data-hissan-idx="(\d+)"/g,
+        (match, idxStr) => {
+
+            const oldIdx = parseInt(idxStr, 10);
+
+            if (oldIdx > maxIdx) {
+                maxIdx = oldIdx;
+            }
+
+            return `data-hissan-idx="${startIdx + oldIdx}"`;
+
+        }
+    );
+
+    return {
+        html: renumbered,
+        nextIdx: startIdx + maxIdx + 1
+    };
+
+}
+
+
+// 🌸 立体の体積の文章題を、必要な数だけ問題文から取り出して、
+// 「たて×よこ」→「×高さ」のように1段階ずつのかけ算・わり算の
+// 筆算枠として組み立てる。対応していない書き方（球の体積・
+// 表面積など）は null を返し、今まで通り直接入力にする。
+function buildHissanVolumeBox(question) {
+
+    const q = String(question.q || "").trim();
+
+    // 🌸 バグ修正：4 × 3.14 のような小数のかけ算・わり算をJSで
+    // そのまま計算すると、浮動小数点の誤差で「12.560000000000002」
+    // のような不要に長い小数になってしまうことがある。筆算のマス目は
+    // この文字列の桁数でマスの数を決めるため、誤差の桁ぶん
+    // 無駄に大きく（マスだらけに）なってしまう。小数第6位で
+    // 丸めてから表示用の文字列にする。
+    const roundClean = (num) =>
+        Math.round(Number(num) * 1e6) / 1e6;
+
+    // 🌸 各パターンで使う「1段階ぶんの計算」を、ラベルつきの
+    // かけ算・わり算の筆算として順番に積み上げるためのヘルパー。
+    const buildSteps = (steps) => {
+
+        let idx = 0;
+        let html = "";
+
+        steps.forEach(step => {
+
+            const aStr = String(roundClean(step.a));
+            const bStr = String(roundClean(step.b));
+            const answerStr = String(roundClean(step.answer));
+
+            const stepBoxHTML =
+                step.op === "÷"
+                    ? buildHissanDivisionBox(
+                        aStr, bStr, answerStr
+                    )
+                    : buildHissanRowBox(
+                        aStr, bStr, "×", answerStr
+                    );
+
+            const renumbered =
+                renumberHissanBoxes(stepBoxHTML, idx);
+
+            idx = renumbered.nextIdx;
+
+            html += `
+                <div class="hissanVolumeStep">
+                    <div class="hissanVolumeStepLabel">${step.label}</div>
+                    ${renumbered.html}
+                </div>
+            `;
+
+        });
+
+        return `<div class="hissanVolumePanel">${html}</div>`;
+
+    };
+
+    let m;
+
+    // 🌸①直方体（たて×よこ×高さ）
+    m = q.match(/^たて(\d+)cm、よこ(\d+)cm、高さ(\d+)cmの直方体の体積は？$/);
+    if (m) {
+
+        const tate = Number(m[1]);
+        const yoko = Number(m[2]);
+        const takasa = Number(m[3]);
+        const base = tate * yoko;
+
+        return buildSteps([
+            { label: "① たて × よこ", a: tate, b: yoko, answer: base },
+            { label: "② ①の答え × 高さ", a: base, b: takasa, answer: base * takasa }
+        ]);
+
+    }
+
+    // 🌸②立方体（1辺×1辺×1辺）
+    m = q.match(/^1辺が(\d+)cmの立方体の体積は(?:何cm³)?？$/);
+    if (m) {
+
+        const edge = Number(m[1]);
+        const base = edge * edge;
+
+        return buildSteps([
+            { label: "① 1辺 × 1辺", a: edge, b: edge, answer: base },
+            { label: "② ①の答え × 1辺", a: base, b: edge, answer: base * edge }
+        ]);
+
+    }
+
+    // 🌸③底面積がすでに分かっている角柱・角錐
+    // （角柱：底面積×高さ　／　角錐：底面積×高さ÷3）
+    m = q.match(/^底面積(?:が)?(\d+(?:\.\d+)?)cm²、高さ(\d+(?:\.\d+)?)cmの(角柱|角錐)の体積は？$/);
+    if (m) {
+
+        const baseArea = Number(m[1]);
+        const height = Number(m[2]);
+        const shape = m[3];
+        const product = baseArea * height;
+
+        const steps = [
+            { label: "① 底面積 × 高さ", a: baseArea, b: height, answer: product }
+        ];
+
+        if (shape === "角錐") {
+
+            steps.push({
+                label: "② ①の答え ÷ 3",
+                a: product, b: 3, op: "÷",
+                answer: product / 3
+            });
+
+        }
+
+        return buildSteps(steps);
+
+    }
+
+    // 🌸④底面が正方形の角柱（1辺の長さから底面積を先に求める）
+    m = q.match(/^底面が1辺(\d+)cmの正方形で高さ(\d+)cmの四角柱の体積は？$/);
+    if (m) {
+
+        const side = Number(m[1]);
+        const height = Number(m[2]);
+        const base = side * side;
+
+        return buildSteps([
+            { label: "① 底面積（1辺 × 1辺）", a: side, b: side, answer: base },
+            { label: "② ①の答え × 高さ", a: base, b: height, answer: base * height }
+        ]);
+
+    }
+
+    // 🌸⑤円柱（円周率はπとする＝答えにπが残る）
+    // 半径×半径→×高さ まで筆算にし、πは自分でテンキーから
+    // 付け足してもらう（筆算のマスは数字専用のため）。
+    m = q.match(/^底面が半径(\d+)cmの円で高さ(\d+)cmの円柱の体積は？（円周率はπとする）$/);
+    if (m) {
+
+        const r = Number(m[1]);
+        const height = Number(m[2]);
+        const base = r * r;
+
+        return buildSteps([
+            { label: "① 半径 × 半径", a: r, b: r, answer: base },
+            { label: "② ①の答え × 高さ（最後にπをつける）", a: base, b: height, answer: base * height }
+        ]);
+
+    }
+
+    // 🌸⑥円柱（円周率3.14を使う＝数値のまま最後まで計算する）
+    m = q.match(/^底面が半径(\d+)cm、高さ(\d+)cmの円柱の体積は？（円周率3\.14）$/);
+    if (m) {
+
+        const r = Number(m[1]);
+        const height = Number(m[2]);
+        const base = r * r;
+        const withPi = base * 3.14;
+
+        return buildSteps([
+            { label: "① 半径 × 半径", a: r, b: r, answer: base },
+            { label: "② ①の答え × 円周率（3.14）", a: base, b: "3.14", answer: withPi },
+            { label: "③ ②の答え × 高さ", a: withPi, b: height, answer: withPi * height }
+        ]);
+
+    }
+
+    // 🌸⑦円錐（円周率はπとする＝答えにπが残る）
+    m = q.match(/^底面の半径(\d+)cm、高さ(\d+)cmの円錐の体積は？（円周率はπとする）$/);
+    if (m) {
+
+        const r = Number(m[1]);
+        const height = Number(m[2]);
+        const base = r * r;
+        const product = base * height;
+
+        return buildSteps([
+            { label: "① 半径 × 半径", a: r, b: r, answer: base },
+            { label: "② ①の答え × 高さ", a: base, b: height, answer: product },
+            { label: "③ ②の答え ÷ 3（最後にπをつける）", a: product, b: 3, op: "÷", answer: product / 3 }
+        ]);
+
+    }
+
+    // 🌸⑨球の体積（公式：4/3 × π × 半径³。円周率はπとする＝答えにπが残る）
+    // 　「4/3」は分数の形（横線つき）で表示し、半径³を計算する段と、
+    // 　公式に当てはめて答えを出す段の2段階にする（πとcm³は自分でつける）。
+    m = q.match(/^半径(\d+)cmの球の体積は？（円周率はπとする、公式は4\/3×π×半径³）$/);
+    if (m) {
+
+        const r = Number(m[1]);
+
+        if (isNaN(r)) {
+            return null;
+        }
+
+        const rCubed = r * r * r;
+        const numerator = 4 * rCubed;
+
+        // 🌸 割り切れない（答えが整数にならない）問題は、
+        // まだこの筆算枠では扱わない（今まで通り直接入力）
+        if (numerator % 3 !== 0) {
+            return null;
+        }
+
+        const finalAnswer = numerator / 3;
+
+        let boxIdx = 0;
+
+        const digitBoxesFor = (value) => {
+
+            return String(Math.abs(value))
+                .split("")
+                .map(() => {
+
+                    const idx = boxIdx++;
+
+                    return `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
+
+                })
+                .join("");
+
+        };
+
+        const html = `
+            <div class="hissanEquationPanel">
+                <div class="hissanEquationStep">
+                    <div class="hissanEquationStepLabel">① 半径³を計算する</div>
+                    <div class="hissanEquationRow">
+                        <span>${r}³ =</span>
+                        <span class="hissanEquationBoxes">${digitBoxesFor(rCubed)}</span>
+                    </div>
+                </div>
+                <div class="hissanEquationStep">
+                    <div class="hissanEquationStepLabel">② 公式にあてはめる（最後にπとcm³をつける）</div>
+                    <div class="hissanEquationRow">
+                        <span class="hissanInlineFraction">
+                            <span>4</span>
+                            <span class="hissanFracBar"></span>
+                            <span>3</span>
+                        </span>
+                        <span>×</span>
+                        <span class="hissanEquationBoxes">${digitBoxesFor(rCubed)}</span>
+                        <span>× π =</span>
+                        <span class="hissanEquationBoxes">${digitBoxesFor(finalAnswer)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // 🌸⑧直方体の高さを逆算する（体積・たて・よこから高さを求める）
+    m = q.match(/^体積が(\d+(?:\.\d+)?)cm³で、たてが(\d+)cm、よこが(\d+)cmの直方体の高さは？$/);
+    if (m) {
+
+        const volume = Number(m[1]);
+        const tate = Number(m[2]);
+        const yoko = Number(m[3]);
+        const base = tate * yoko;
+
+        return buildSteps([
+            { label: "① たて × よこ", a: tate, b: yoko, answer: base },
+            { label: "② 体積 ÷ ①の答え", a: volume, b: base, op: "÷", answer: volume / base }
+        ]);
+
+    }
+
+    return null;
+
+}
+
+
+// 🌸 平面図形（円の面積・円周）：円周率をπとする問題は、答えにπが
+// 残るため、数字だけの部分（半径×半径、半径×2）を筆算にし、
+// πは自分でテンキーから付け足してもらう（体積の円柱・円錐の
+// 筆算枠と同じ考え方）。
+function buildHissanGeometryBox(question) {
+
+    const q = String(question.q || "").trim();
+
+    // 🌸 各パターンで使う「1段階ぶんの計算」を、ラベルつきの
+    // かけ算の筆算として表示するためのヘルパー
+    // （buildHissanVolumeBoxのbuildStepsと同じ考え方）。
+    const buildSteps = (steps) => {
+
+        let idx = 0;
+        let html = "";
+
+        steps.forEach(step => {
+
+            const stepBoxHTML =
+                buildHissanRowBox(
+                    String(step.a), String(step.b), "×", String(step.answer)
+                );
+
+            const renumbered =
+                renumberHissanBoxes(stepBoxHTML, idx);
+
+            idx = renumbered.nextIdx;
+
+            html += `
+                <div class="hissanVolumeStep">
+                    <div class="hissanVolumeStepLabel">${step.label}</div>
+                    ${renumbered.html}
+                </div>
+            `;
+
+        });
+
+        return `<div class="hissanVolumePanel">${html}</div>`;
+
+    };
+
+    let m;
+
+    // 🌸①円の面積（半径×半径。最後にπをつける）
+    m = q.match(/^半径(\d+)cmの円の面積は？（円周率はπとする）$/);
+    if (m) {
+
+        const r = Number(m[1]);
+
+        if (isNaN(r)) {
+            return null;
+        }
+
+        return buildSteps([
+            { label: "① 半径 × 半径（最後にπをつける）", a: r, b: r, answer: r * r }
+        ]);
+
+    }
+
+    // 🌸②円周の長さ（半径×2。最後にπをつける）
+    m = q.match(/^半径(\d+)cmの円の円周の長さは？（円周率はπとする）$/);
+    if (m) {
+
+        const r = Number(m[1]);
+
+        if (isNaN(r)) {
+            return null;
+        }
+
+        return buildSteps([
+            { label: "① 半径 × 2（最後にπをつける）", a: r, b: 2, answer: r * 2 }
+        ]);
+
+    }
+
+    return null;
+
+}
+
+
 // 🌸 一次方程式：移項してxを孤立させる過程を筆算枠で見せる。
 // 対応する形（qの書き方）：
 // ・ax + b = c 、ax - b = c （2段階：移項してまとめる→わる）
@@ -4692,7 +5369,10 @@ function buildHissanEquationBox(question) {
 
     // 🌸 1つの値を、符号（マイナスの時だけ）＋桁数ぶんの1桁マスに
     // 分けて書き込めるようにする（分数の筆算と同じ考え方）。
-    const boxesFor = (value) => {
+    // 🌸 forceSign を true にすると、答えがプラスの時も符号マスを
+    // 出す（移項で符号が変わることを、自分で「＋」を選んで
+    // 書かせたい時に使う）。
+    const boxesFor = (value, forceSign) => {
 
         const isNeg = value < 0;
 
@@ -4701,7 +5381,7 @@ function buildHissanEquationBox(question) {
 
         let html = "";
 
-        if (isNeg) {
+        if (isNeg || forceSign) {
 
             const signIdx = boxIndex++;
 
@@ -4748,12 +5428,14 @@ function buildHissanEquationBox(question) {
 
     // 🌸 1つの段の中に、書き込みマスが2か所ある時（例：xの項と
     // 定数項を同時にまとめる段）に使う。
-    const stepRow2 = (label, part1, boxValue1, mid, boxValue2, tailText) => `
+    // 🌸 forceSign1 を true にすると、1つ目のマスの符号を
+    // （プラスの時も）自分で選んで書かせる。
+    const stepRow2 = (label, part1, boxValue1, mid, boxValue2, tailText, forceSign1) => `
         <div class="hissanEquationStep">
             <div class="hissanEquationStepLabel">${label}</div>
             <div class="hissanEquationRow">
                 ${part1 ? `<span>${part1}</span>` : ""}
-                <span class="hissanEquationBoxes">${boxesFor(boxValue1)}</span>
+                <span class="hissanEquationBoxes">${boxesFor(boxValue1, forceSign1)}</span>
                 ${mid ? `<span>${mid}</span>` : ""}
                 <span class="hissanEquationBoxes">${boxesFor(boxValue2)}</span>
                 ${tailText ? `<span>${tailText}</span>` : ""}
@@ -4891,6 +5573,64 @@ function buildHissanEquationBox(question) {
     }
 
     // =========================
+    // 🌸 5段階：a(x ± b) = cx + d
+    // 　（かっこの中を分配法則で展開してから、
+    // 　　xが両辺にある問題と同じ手順（移項→移項→
+    // 　　まとめる→わる）に続ける）
+    // =========================
+
+    m = q.match(/^(\d+)\(x\s*([+\-])\s*(\d+)\)\s*=\s*(\d+)x\s*([+\-])\s*(\d+)(?!\d)/);
+
+    if (m) {
+
+        const a = parseInt(m[1], 10);
+        const innerSign = m[2];
+        const bInner = parseInt(m[3], 10);
+        const c = parseInt(m[4], 10);
+        const dSign = m[5];
+        const dAbs = parseInt(m[6], 10);
+
+        if ([a, bInner, c, dAbs].some(n => isNaN(n)) || a === 0 || c === 0) {
+            return null;
+        }
+
+        const bExpanded = a * bInner;
+        const b = innerSign === "+" ? bExpanded : -bExpanded;
+        const d = dSign === "+" ? dAbs : -dAbs;
+
+        const coefCombined = a - c;
+        const constCombined = b - d;
+        const dividend = -constCombined;
+        const divisor = coefCombined;
+
+        // 🌸 係数がマイナスになる問題・答えがマイナスになる問題は、
+        // まだこの筆算枠では扱わない（今まで通り直接入力）
+        if (
+            divisor <= 0 ||
+            dividend <= 0 ||
+            dividend % divisor !== 0
+        ) {
+            return null;
+        }
+
+        const bSign = b >= 0 ? "+" : "-";
+        const bText = `${a}x ${bSign} ${Math.abs(b)}`;
+
+        const html = `
+            <div class="hissanEquationPanel">
+                ${stepRow("① 分配法則で展開する", `${a} × ${bInner} =`, bExpanded, "")}
+                ${stepRow("② 移項する（xの項、符号が変わる）", bText, -c, `= ${d}`, true)}
+                ${stepRow("③ 移項する（定数項、符号が変わる）", `${bText} - ${c}x`, -d, "= 0")}
+                ${stepRow2("④ まとめる（xの項・定数項）", "", coefCombined, "x", constCombined, "= 0")}
+                ${stepRow("⑤ xの係数でわる", `x = ${dividend} ÷ ${divisor} =`, dividend / divisor, "")}
+            </div>
+        `;
+
+        return html;
+
+    }
+
+    // =========================
     // 🌸 2段階：ax + b = c
     // =========================
 
@@ -4977,7 +5717,7 @@ function buildHissanEquationBox(question) {
 
         const html = `
             <div class="hissanEquationPanel">
-                ${stepRow("① 移項する", `x = ${c} - ${b} =`, c - b, "")}
+                ${stepRow2("① 移項する（符号が変わる）", `x = ${c}`, -b, "=", c - b, "")}
             </div>
         `;
 
@@ -5002,7 +5742,7 @@ function buildHissanEquationBox(question) {
 
         const html = `
             <div class="hissanEquationPanel">
-                ${stepRow("① 移項する", `x = ${c} + ${b} =`, c + b, "")}
+                ${stepRow2("① 移項する（符号が変わる）", `x = ${c}`, b, "=", c + b, "", true)}
             </div>
         `;
 
@@ -5062,6 +5802,410 @@ function buildHissanEquationBox(question) {
 
     // 🌸 xが両辺にある問題・かっこを展開する問題・文章題は対象外
     return null;
+
+}
+
+
+// 🌸 「2x - 10」のような、1種類の文字の項＋数の項だけからなる
+// シンプルな式の文字列を、係数・定数・文字（x、yなど）に分解する。
+// 想定外の形（複数種類の文字が混ざる、かけ算・わり算を含む等）の
+// 時はnullを返す。
+function parseSimpleLinearExpr(s) {
+
+    const compact = String(s).replace(/\s+/g, "");
+    const terms = compact.match(/[+-]?[^+-]+/g);
+
+    if (!terms) {
+        return null;
+    }
+
+    let coeff = 0;
+    let constant = 0;
+    let varLetter = null;
+
+    for (const t of terms) {
+
+        const tm = t.match(/^([+-]?)(\d*)([a-zA-Z]?)$/);
+
+        if (!tm) {
+            return null;
+        }
+
+        const sign = tm[1] === "-" ? -1 : 1;
+        const mag = tm[2] === "" ? 1 : parseInt(tm[2], 10);
+
+        if (isNaN(mag)) {
+            return null;
+        }
+
+        if (tm[3]) {
+
+            // 🌸 文字の項が2種類以上混ざっている式（例：「x+y」）は対象外
+            if (varLetter && varLetter !== tm[3]) {
+                return null;
+            }
+
+            varLetter = tm[3];
+            coeff += sign * mag;
+
+        } else {
+
+            constant += sign * mag;
+
+        }
+
+    }
+
+    return { coeff, constant, varLetter };
+
+}
+
+// 🌸 分配法則で展開してから同類項をまとめる問題
+// （例：「5(x-2) - 3x を計算すると？」）専用の筆算枠。
+// 「N(v±c) ± Kv」の形（かっこの中の文字の係数は1のみ、
+// 末尾の項も同じ文字で数字の項は付かない）だけを対象にする。
+// ①分配法則で展開する（N×v、N×cをそれぞれ書き込む。末尾の
+// 　もとからある項はそのまま表示）、②同類項をまとめる
+// （展開した文字の項＋末尾の項の係数、定数項をそれぞれ書き込む）
+// の2段階で表示する。
+// 計算結果が正解（answerRaw）と一致しない時は、誤った途中式を
+// 表示しないよう対象外にする（呼び出し元で今まで通りの
+// レイアウトにフォールバックする）。
+function buildHissanDistributeExpandBox(expr, answerRaw) {
+
+    const compact = String(expr).replace(/\s+/g, "");
+
+    const dm = compact.match(/^(\d+)\(([a-zA-Z])([+-]\d+)\)([+-]\d*)([a-zA-Z])$/);
+
+    if (!dm) {
+        return null;
+    }
+
+    const N = parseInt(dm[1], 10);
+    const varInside = dm[2];
+    const constInside = parseInt(dm[3], 10);
+    const outerSignDigits = dm[4];
+    const varOutside = dm[5];
+
+    // 🌸 かっこの中と末尾の項で、文字の種類が違う（例：
+    // 「5(x-2) - 3y」）時は対象外
+    if (varInside !== varOutside) {
+        return null;
+    }
+
+    if ([N, constInside].some(n => isNaN(n)) || N === 0) {
+        return null;
+    }
+
+    const outerSign = outerSignDigits.charAt(0) === "-" ? -1 : 1;
+    const outerDigits = outerSignDigits.slice(1);
+    const outerCoeff = outerSign * (outerDigits === "" ? 1 : parseInt(outerDigits, 10));
+
+    if (isNaN(outerCoeff)) {
+        return null;
+    }
+
+    const expandedCoeff = N;
+    const expandedConst = N * constInside;
+    const combinedCoeff = expandedCoeff + outerCoeff;
+    const combinedConst = expandedConst;
+
+    // 🌸 まとめた結果、文字の項が消える（係数が0になる）問題は
+    // この枠の対象外（今まで通り直接入力）
+    if (combinedCoeff === 0) {
+        return null;
+    }
+
+    // 🌸 安全確認：実際に計算した結果が、正解（answerRaw）と
+    // 一致するか確認する
+    const parsedAnswer = parseSimpleLinearExpr(answerRaw);
+
+    if (
+        !parsedAnswer ||
+        parsedAnswer.varLetter !== varInside ||
+        parsedAnswer.coeff !== combinedCoeff ||
+        parsedAnswer.constant !== combinedConst
+    ) {
+        return null;
+    }
+
+    let boxIndex = 0;
+
+    // 🌸 1つの値を、符号（マイナスの時だけ）＋桁数ぶんの
+    // 1桁マスに分けて書き込めるようにする
+    const boxesFor = (value) => {
+
+        const isNeg = value < 0;
+        const digits = String(Math.abs(value)).split("");
+
+        let html = "";
+
+        if (isNeg) {
+
+            const signIdx = boxIndex++;
+
+            html += `<input type="text" inputmode="text" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${signIdx}" autocomplete="off">`;
+
+        }
+
+        digits.forEach(() => {
+
+            const idx = boxIndex++;
+
+            html += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
+
+        });
+
+        return html;
+
+    };
+
+    // 🌸 1段ぶんの行を作る：文字の係数のマス→文字（そのまま表示）→
+    // 定数項のマス→（あれば）末尾に残る文字の項をそのまま表示
+    const stepRow2 = (label, boxValue1, boxValue2, tailText) => `
+        <div class="hissanEquationStep">
+            <div class="hissanEquationStepLabel">${label}</div>
+            <div class="hissanEquationRow">
+                <span class="hissanEquationBoxes">${boxesFor(boxValue1)}</span>
+                <span>${varInside}</span>
+                <span class="hissanEquationBoxes">${boxesFor(boxValue2)}</span>
+                ${tailText ? `<span>${tailText}</span>` : ""}
+            </div>
+        </div>
+    `;
+
+    const outerSignText = outerCoeff < 0 ? "-" : "+";
+    const outerAbsText = Math.abs(outerCoeff) === 1 ? "" : String(Math.abs(outerCoeff));
+    const expandTailText = ` ${outerSignText} ${outerAbsText}${varInside}`;
+
+    return `
+        <div class="hissanEquationPanel">
+            ${stepRow2("① 分配法則で展開する", expandedCoeff, expandedConst, expandTailText)}
+            ${stepRow2("② 同類項をまとめる", combinedCoeff, combinedConst, "")}
+        </div>
+    `;
+
+}
+
+// 🌸 同類項をまとめる問題（例：「4x + 3 - 2x + 5 を計算すると？」）専用の
+// 筆算枠。かっこの展開が必要な問題（例：「5(x-2) - 3x」）は、
+// buildHissanDistributeExpandBoxで対象にできる形だけ先に処理する
+// （その形に当てはまらないかっこ入りの問題は、引き続きここで対象外）。
+// xの項・yの項・数の項をそれぞれ、符号つきでまとめて書き込むマスを
+// 用意する。まとめる項が1つしかない種類（例：定数項が1つだけ）は
+// マスを作らず、そのまま表示だけする。
+function buildHissanCombineLikeTermsBox(question) {
+
+    const raw = String(question.q || "").trim();
+
+    // 🌸 「〜を計算すると？」の形以外（展開する・因数分解する・
+    // 値は？など）は対象外
+    const m = raw.match(/^(.*)を計算すると[？?]$/);
+
+    if (!m) {
+        return null;
+    }
+
+    const expr = m[1].trim();
+
+    // 🌸 「N(v±c) ± Kv」の形（分配法則で展開してから同類項を
+    // まとめる問題）は、先にこちらの専用レイアウトを試す
+    const distributeHTML = buildHissanDistributeExpandBox(expr, question.a);
+
+    if (distributeHTML) {
+        return distributeHTML;
+    }
+
+    // 🌸 かっこ・×÷・＝・累乗・√などを含む問題（展開・代入・
+    // 単項式どうしの乗除など）は対象外。プラス・マイナスだけで
+    // 項をつなげている「同類項をまとめる」問題だけを対象にする。
+    if (/[()（）×÷=÷√²³]/.test(expr)) {
+        return null;
+    }
+
+    const compact = expr.replace(/\s+/g, "");
+
+    const termStrings = compact.match(/[+-]?[^+-]+/g);
+
+    if (!termStrings || termStrings.length < 2) {
+        return null;
+    }
+
+    const parsedTerms = [];
+
+    for (const t of termStrings) {
+
+        const tm = t.match(/^([+-]?)(\d*)([a-zA-Z]?)$/);
+
+        if (!tm) {
+            return null;
+        }
+
+        const sign = tm[1] === "-" ? -1 : 1;
+        const coeffStr = tm[2];
+        const varLetter = tm[3];
+
+        // 🌸 数字も文字もない（空の）項は不正な形なので対象外
+        if (!varLetter && coeffStr === "") {
+            return null;
+        }
+
+        const magnitude =
+            coeffStr === "" ? 1 : parseInt(coeffStr, 10);
+
+        if (isNaN(magnitude)) {
+            return null;
+        }
+
+        parsedTerms.push({
+            value: sign * magnitude,
+            varLetter: varLetter
+        });
+
+    }
+
+    // 🌸 出現した種類（xの項・yの項・数の項…）の順番どおりに
+    // グループ分けする（空文字＝数の項）
+    const order = [];
+    const groups = {};
+
+    parsedTerms.forEach(t => {
+
+        const key = t.varLetter;
+
+        if (!(key in groups)) {
+            groups[key] = [];
+            order.push(key);
+        }
+
+        groups[key].push(t);
+
+    });
+
+    let boxIndex = 0;
+
+    // 🌸 1つの値を、符号（マイナスの時だけ）＋桁数ぶんの
+    // 1桁マスに分けて書き込めるようにする
+    const boxesFor = (value) => {
+
+        const isNeg = value < 0;
+
+        const digits =
+            String(Math.abs(value)).split("");
+
+        let html = "";
+
+        if (isNeg) {
+
+            const signIdx = boxIndex++;
+
+            html += `<input type="text" inputmode="text" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${signIdx}" autocomplete="off">`;
+
+        }
+
+        digits.forEach(() => {
+
+            const idx = boxIndex++;
+
+            html += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
+
+        });
+
+        return html;
+
+    };
+
+    // 🌸 xの項・yの項など：符号＋数字のマスに続けて、
+    // 最後に文字（x、yなど）のマスも1つ書き込めるようにする
+    const boxesForVarTerm = (coeff) => {
+
+        let html = boxesFor(coeff);
+
+        const idx = boxIndex++;
+
+        html += `<input type="text" inputmode="text" readonly class="hissanAnswerBox hissanEquationBox" data-hissan-idx="${idx}" autocomplete="off">`;
+
+        return html;
+
+    };
+
+    const stepRow = (label, givenText, boxValue, isVarTerm) => `
+        <div class="hissanEquationStep">
+            <div class="hissanEquationStepLabel">${label}</div>
+            <div class="hissanEquationRow">
+                ${givenText ? `<span>${givenText}</span>` : ""}
+                <span class="hissanEquationBoxes">${isVarTerm ? boxesForVarTerm(boxValue) : boxesFor(boxValue)}</span>
+            </div>
+        </div>
+    `;
+
+    // 🌸 元の式の中の1つの項を「+3x」「-x」「+5」のような
+    // 見やすい表記に戻す（先頭の項は「+」を省略し、係数が
+    // ±1の文字の項は数字を省略する：「1x」ではなく「x」）
+    const termText = (t, isFirst) => {
+
+        const showsCoeff =
+            !(t.varLetter && Math.abs(t.value) === 1);
+
+        const body =
+            `${showsCoeff ? Math.abs(t.value) : ""}${t.varLetter}`;
+
+        if (isFirst) {
+            return t.value < 0 ? `-${body}` : body;
+        }
+
+        return t.value < 0 ? `- ${body}` : `+ ${body}`;
+
+    };
+
+    const stepLabels = ["①", "②", "③", "④", "⑤"];
+
+    const stepsHtml = [];
+
+    let stepNum = 0;
+
+    order.forEach(key => {
+
+        const terms = groups[key];
+
+        // 🌸 まとめる項が1つしかない種類は、書き込みマスを
+        // 作る意味がないのでスキップする（そのまま表示だけ）
+        if (terms.length < 2) {
+            return;
+        }
+
+        const sum =
+            terms.reduce((s, t) => s + t.value, 0);
+
+        const givenText =
+            terms
+                .map((t, i) => termText(t, i === 0))
+                .join(" ") + " =";
+
+        const label =
+            key
+                ? `${stepLabels[stepNum] || `${stepNum + 1}.`} ${key}の項をまとめる`
+                : `${stepLabels[stepNum] || `${stepNum + 1}.`} 数の項をまとめる`;
+
+        stepsHtml.push(
+            stepRow(label, givenText, sum, !!key)
+        );
+
+        stepNum++;
+
+    });
+
+    // 🌸 まとめられる項（同じ種類が2つ以上）が1つもなければ、
+    // 筆算枠を出す意味がないので対象外にする
+    if (stepsHtml.length === 0) {
+        return null;
+    }
+
+    return `
+        <div class="hissanEquationPanel">
+            ${stepsHtml.join("")}
+        </div>
+    `;
 
 }
 
@@ -5335,9 +6479,241 @@ function buildHissanRowBox(aStr, bStr, opSymbol, answerStr) {
 }
 
 
+// 🌸 わり算・あまり（本当の筆算どおり）：わる数が整数の時は、
+// 商を1桁ずつ求めて、その都度「かけて→ひいて→つぎの桁をおろす」を
+// 繰り返す、実際の手書きの筆算と同じ段階に分けて表示する。
+// 商が2桁以上（＝繰り下げ・くり返しあり）の問題で、今までは
+// 「商を全部求めてから、商×わる数を一回だけ引く」形になっていて、
+// 本当の筆算の書き方（段が足りない）と合わなくなっていたのを直す。
+// 何かおかしい場合はnullを返し、呼び出し元で今まで通りの
+// レイアウトにフォールバックする。
+function buildHissanDivisionBoxStepByStep(aStr, bStr, answerStr) {
+
+    const aParts = String(aStr).split(".");
+    const aIntPart = aParts[0] || "0";
+    const aFracPart = aParts.length > 1 ? aParts[1] : "";
+    const aIntLen = aIntPart.length;
+
+    const bValue = parseFloat(bStr);
+    const D = Math.round(bValue);
+
+    // 🌸 わる数が整数でない時は、この段階的レイアウトの対象外
+    if (!isFinite(D) || D <= 0 || Math.abs(bValue - D) > 1e-9) {
+        return null;
+    }
+
+    const ansParts = answerStr ? String(answerStr).split(".") : [""];
+    const ansIntPart = ansParts[0] || "";
+    const ansFracPart = ansParts.length > 1 ? ansParts[1] : "";
+    const qIntLen = Math.max(ansIntPart.length, 1);
+    const qFracLen = ansFracPart.length;
+
+    // 🌸 商の整数部の桁数より、わられる数の整数部の桁数が
+    // 少ないのはおかしい（わる数が整数な以上、商が
+    // わられる数より大きい桁数にはならない）
+    const leadingSuppress = aIntLen - qIntLen;
+
+    if (leadingSuppress < 0) {
+        return null;
+    }
+
+    // 🌸 わられる数の桁を、整数部→小数部の順で1つの配列にする。
+    // 商の小数部の方が、わられる数の小数部より長く必要な時は、
+    // 実際の筆算と同じく「0をおろして続ける」ので、0を継ぎ足す。
+    const digitChars = (aIntPart + aFracPart).split("");
+    const totalCycles = qIntLen + qFracLen;
+
+    while (digitChars.length - leadingSuppress < totalCycles) {
+        digitChars.push("0");
+    }
+
+    const totalDigitCols = digitChars.length;
+    const hasDotColumn = aFracPart !== "" || qFracLen > 0;
+
+    // 🌸 ①実際に1桁ずつ割り進める（商・積・あまりを計算するだけ。
+    // マスやHTMLはまだ作らない）
+    let carry = 0;
+
+    for (let i = 0; i < leadingSuppress; i++) {
+        carry = carry * 10 + Number(digitChars[i]);
+    }
+
+    const cycles = [];
+
+    for (let c = 0; c < totalCycles; c++) {
+
+        const col = leadingSuppress + c;
+        const digit = Number(digitChars[col]);
+        const current = carry * 10 + digit;
+        const qDigit = Math.floor(current / D);
+        const product = qDigit * D;
+        const remainder = current - product;
+
+        cycles.push({ col, current, qDigit, product, remainder });
+
+        carry = remainder;
+
+    }
+
+    // 🌸 安全確認：最後まで計算したあまりが、正解（answerStr）から
+    // 逆算したあまりと一致するか確認する。ずれていたら、誤った
+    // 途中式を表示してしまわないよう、今まで通りのレイアウトへ
+    // フォールバックする。
+    const expectedQuotient = parseFloat(answerStr || "0") || 0;
+    const expectedRemainder =
+        parseFloat(aStr) - expectedQuotient * D;
+    const actualRemainder =
+        totalCycles > 0
+            ? cycles[totalCycles - 1].remainder / Math.pow(10, qFracLen)
+            : 0;
+
+    if (Math.abs(expectedRemainder - actualRemainder) > 1e-6) {
+        return null;
+    }
+
+    // 🌸 ②マスに書き込むHTMLを作る。列（0〜totalDigitCols-1）ごとに
+    // 「空欄」「すでに書かれている数字（わられる数）」「入力マス」の
+    // どれかを割り当て、小数点の列（hasDotColumnの時、aIntLenの
+    // 直後）だけ別扱いで挟み込む。
+    const digitsOf = (n) => String(Math.abs(n)).split("");
+
+    // 🌸 1段ぶんの「マスの並び」だけを作る（外側の<div>で囲むかどうかは
+    // 呼び出し側で決める。商の段（.hissanDivQuotientRow）は、今までと
+    // 同じマークアップになるよう、この中身をそのまま入れる）。
+    const renderCells = (showDot, cellForCol) => {
+
+        let html = "";
+
+        for (let col = 0; col < totalDigitCols; col++) {
+
+            if (hasDotColumn && col === aIntLen) {
+
+                html += showDot
+                    ? `<span class="hissanDigitCell hissanDotCell">.</span>`
+                    : `<span class="hissanDigitCell hissanDotCell"></span>`;
+
+            }
+
+            const cell = cellForCol(col);
+
+            if (cell === null) {
+                html += `<span class="hissanDivBlankCell"></span>`;
+            } else if (cell.given !== undefined) {
+                html += `<span class="hissanDigitCell hissanDigitFilled">${cell.given}</span>`;
+            } else {
+                html += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${cell.idx}" autocomplete="off">`;
+            }
+
+        }
+
+        return html;
+
+    };
+
+    const renderRow = (showDot, cellForCol) =>
+        `<div class="hissanDivRow">${renderCells(showDot, cellForCol)}</div>`;
+
+    let boxIndex = 0;
+
+    // 🌸 わられる数の段（すでに書かれている数字。今まで通り一番上に表示）
+    const dividendRowHTML = renderRow(true, (col) => ({ given: digitChars[col] }));
+
+    // 🌸 商・積・あまりのマスを、段（①②③…）ごとに、実際に手で
+    // 解く時と同じ順番（この段の商を決める→かけ算を書く→
+    // ひき算してあまりを出す）でマスの番号をふっていく。
+    const quotientIdxByCol = new Array(totalDigitCols).fill(null);
+    const cycleRowsHTML = [];
+
+    cycles.forEach((cyc, c) => {
+
+        // ① この段の商（1桁）
+        quotientIdxByCol[cyc.col] = boxIndex++;
+
+        // ② 商×わる数（積）：現在値（current）と同じ桁数ぶんの
+        // 列を右づめで使う。積の桁数が足りない分は左側を空欄にする。
+        // 実際に数字を書く時と同じく、上の位（左）→下の位（右）の順。
+        const currentDigits = digitsOf(cyc.current);
+        const productDigits = digitsOf(cyc.product);
+        const productPad = currentDigits.length - productDigits.length;
+        const productStartCol = cyc.col - currentDigits.length + 1;
+
+        const productCells = new Array(totalDigitCols).fill(null);
+
+        for (let k = 0; k < currentDigits.length; k++) {
+
+            if (k >= productPad) {
+                productCells[productStartCol + k] = { idx: boxIndex++ };
+            }
+
+        }
+
+        const productRowHTML = renderRow(false, (col) => productCells[col]);
+
+        // ③ あまり（＋次に降ろす桁）：最後の段は「本当のあまり」だけ、
+        // それ以外の段は「次の段の現在値（＝あまりの後ろに次の桁を
+        // 降ろしてつなげた数）」と同じ値になる。ひき算の繰り下がりが
+        // あるため、下の位（右）→上の位（左）の順でマスの番号をふる。
+        const isLast = c === cycles.length - 1;
+        const remainderValue = isLast ? cyc.remainder : cycles[c + 1].current;
+        const remainderEndCol = isLast ? cyc.col : cycles[c + 1].col;
+        const remainderDigits = digitsOf(remainderValue);
+        const remainderStartCol = remainderEndCol - remainderDigits.length + 1;
+
+        const remainderIdx = new Array(remainderDigits.length);
+
+        for (let k = remainderDigits.length - 1; k >= 0; k--) {
+            remainderIdx[k] = boxIndex++;
+        }
+
+        const remainderCells = new Array(totalDigitCols).fill(null);
+
+        for (let k = 0; k < remainderDigits.length; k++) {
+            remainderCells[remainderStartCol + k] = { idx: remainderIdx[k] };
+        }
+
+        const remainderRowHTML = renderRow(false, (col) => remainderCells[col]);
+
+        cycleRowsHTML.push(`
+            ${productRowHTML}
+            <div class="hissanDivSubLine"></div>
+            ${remainderRowHTML}
+        `);
+
+    });
+
+    const quotientRowHTML = renderCells(qFracLen > 0, (col) =>
+        quotientIdxByCol[col] === null ? null : { idx: quotientIdxByCol[col] }
+    );
+
+    return `
+        <div class="hissanDivPanel">
+            <div class="hissanDivQuotientRow">${quotientRowHTML}</div>
+            <div class="hissanDivWrap">
+                <span class="hissanDivisor">${String(D).split("").map(c => `<span class="hissanDigitCell hissanDigitFilled">${c}</span>`).join("")}</span>
+                <div class="hissanDivBracket">
+                    ${dividendRowHTML}
+                    ${cycleRowsHTML.join("")}
+                </div>
+            </div>
+        </div>
+    `;
+
+}
+
+
 // 🌸 わり算・あまり：わる数・わられる数は数字ボードと同じ□で囲んで表示し、
 // 商（答え）は建て式の上に空の入力マスとして表示する（採点はしない）。
 function buildHissanDivisionBox(aStr, bStr, answerStr) {
+
+    // 🌸 わる数が整数の問題は、実際の筆算どおりの段階的レイアウトを
+    // 試す（うまく作れない・計算が合わない時だけnullが返るので、
+    // その時は今まで通りのレイアウトにフォールバックする）。
+    const stepByStepHTML =
+        buildHissanDivisionBoxStepByStep(aStr, bStr, answerStr);
+
+    if (stepByStepHTML) {
+        return stepByStepHTML;
+    }
 
     const boxChars = (numStr) =>
         String(numStr)
@@ -5402,16 +6778,22 @@ function buildHissanDivisionBox(aStr, bStr, answerStr) {
 
     let boxIndex = 0;
 
-    // 🌸 ① 商のマス：下の位（右）から上の位（左）へ
+    // 🌸 バグ修正：商は実際の筆算と同じく「大きい位（左）から
+    // 小さい位（右）へ」1つずつ決まっていく（例：180÷3なら、
+    // まず十の位の6を先に決め、それから一の位の0を決める）。
+    // 以前は逆順（小さい位を先に）でマス番号を振っていたため、
+    // 商が2桁以上になる問題で、入力した数字が左右反対の位置に
+    // 表示されてしまっていた（今まで商が1桁の問題しか
+    // 無かったため、このバグは表に出ていなかった）。
     const quotientIntIdx = new Array(ansIntLen);
     const quotientFracIdx = new Array(ansFracLen);
 
-    for (let p = ansFracLen - 1; p >= 0; p--) {
-        quotientFracIdx[p] = boxIndex++;
+    for (let p = 0; p < ansIntLen; p++) {
+        quotientIntIdx[p] = boxIndex++;
     }
 
-    for (let p = ansIntLen - 1; p >= 0; p--) {
-        quotientIntIdx[p] = boxIndex++;
+    for (let p = 0; p < ansFracLen; p++) {
+        quotientFracIdx[p] = boxIndex++;
     }
 
     let quotientHTML = "";
@@ -5734,6 +7116,41 @@ function showQuestion() {
 
         keypad.style.display =
             "grid";
+
+    }
+
+    // 🌸 「考え方」をテンキーの横（筆算の下）へ移動
+    moveFeedbackTo("mathFeedbackSlot");
+
+
+    // =================================
+    // 🌸 バグ修正：理科・英語の「けす／こたえる」ボタンが
+    // 表示されたまま残っていると、算数のテンキーと二重に
+    // 表示されてしまう（理科や英語→算数と教科を切り替えた際）。
+    // 算数の問題表示のたびに、必ず非表示にしておく。
+    // =================================
+
+    const rikaControlsEl =
+        document.getElementById(
+            "rikaControls"
+        );
+
+    if (rikaControlsEl) {
+
+        rikaControlsEl.style.display =
+            "none";
+
+    }
+
+    const englishControlsEl =
+        document.getElementById(
+            "englishControls"
+        );
+
+    if (englishControlsEl) {
+
+        englishControlsEl.style.display =
+            "none";
 
     }
 
@@ -6072,7 +7489,7 @@ function submitAnswer() {
 
         <br>
 
-        ${quizState.currentQuestion.memo || ""}
+        <p class="feedbackMemo">${quizState.currentQuestion.memo || ""}</p>
 
         `;
 
@@ -6099,7 +7516,7 @@ function submitAnswer() {
 
         <br>
 
-        ${quizState.currentQuestion.memo || ""}
+        <p class="feedbackMemo">${quizState.currentQuestion.memo || ""}</p>
 
         `;
 
@@ -6238,6 +7655,14 @@ function submitAnswer() {
     mathKeypadAction =
         "next";
 
+
+    // 🌸 バグ修正：回答後も入力欄にフォーカスが残ったままだと、
+    // キーボードのEnterキーを連打（押しっぱなし）したときに
+    // このsubmitAnswer()が同じ答えのまま何度も呼ばれてしまい、
+    // スコア・ポイントが際限なく増え続けてしまっていた。
+    // 復習モード（submitReviewAnswer）と同様、回答後は入力欄を
+    // disabledにして、次の問題が表示されるまで再送信できないようにする。
+    input.disabled = true;
 
 
     const okBtn =
@@ -6703,6 +8128,14 @@ function getMathDatabase() {
         case "grade7":
             return chu1MathQuestions;
 
+        // 🌸 中学2年
+        case "grade8":
+            return chu2MathQuestions;
+
+        // 🌸 中学3年
+        case "grade9":
+            return chu3MathQuestions;
+
         default:
             return [];
     }
@@ -6743,6 +8176,14 @@ function getKokugoDatabase() {
         case "grade7":
             return chu1KokugoQuestions;
 
+        // 🌸 中学2年
+        case "grade8":
+            return chu2KokugoQuestions;
+
+        // 🌸 中学3年
+        case "grade9":
+            return chu3KokugoQuestions;
+
         default:
             return [];
     }
@@ -6771,6 +8212,33 @@ function getKokugoGradeNumber() {
     }
 
     return num;
+
+}
+
+// 🌸 "grade7"→1、"grade8"→2、"grade9"→3 のように
+// 中学の学年数字だけを取り出す（数学・国語ボタン表示や
+// 国語コースタイトルで、小学生と中学生の表示を切り分けるために使う）
+function getJuniorHighNumber() {
+
+    if (!currentUser || !currentUser.grade) {
+        return null;
+    }
+
+    const match =
+        currentUser.grade.match(/^grade(\d+)$/);
+
+    if (!match) {
+        return null;
+    }
+
+    const num = Number(match[1]);
+
+    // 🌸 中学のデータがあるのは中学1〜3年（grade7〜9）のみ
+    if (num < 7 || num > 9) {
+        return null;
+    }
+
+    return num - 6;
 
 }
 
@@ -6803,6 +8271,14 @@ function getRikaDatabase() {
         case "grade7":
             return chu1RikaQuestions;
 
+        // 🌸 中学2年（既存データを活用）
+        case "grade8":
+            return chu2RikaQuestions;
+
+        // 🌸 中学3年（既存データを活用）
+        case "grade9":
+            return chu3RikaQuestions;
+
         default:
             // 🌸 小学1・2年など、理科データが未対応の学年
             return [];
@@ -6810,7 +8286,7 @@ function getRikaDatabase() {
 
 }
 
-// 🌸 理科のボタン表示用：「小学N年」「中学1年」のラベルを返す
+// 🌸 理科のボタン表示用：「小学N年」「中学N年」のラベルを返す
 function getRikaGradeLabel() {
 
     if (!currentUser || !currentUser.grade) {
@@ -6833,6 +8309,12 @@ function getRikaGradeLabel() {
 
         case "grade7":
             return "中学1年";
+
+        case "grade8":
+            return "中学2年";
+
+        case "grade9":
+            return "中学3年";
 
         default:
             return null;
@@ -6949,6 +8431,19 @@ function startSelectedRika() {
         // 上書きしてしまい、ボタンが横並びにならない
         rikaControls.style.display =
             "flex";
+    }
+
+    // 🌸 バグ修正：英語の「けす／こたえる」ボタンが
+    // 表示されたまま残らないように非表示にする
+    const englishControlsFromRika =
+        document.getElementById(
+            "englishControls"
+        );
+
+    if (englishControlsFromRika) {
+
+        englishControlsFromRika.style.display =
+            "none";
     }
 
     // =========================================
@@ -7351,6 +8846,14 @@ function getEnglishDatabase() {
         case "grade7":
             return chu1EigoQuestions;
 
+        // 🌸 中学2年（既存データを活用）
+        case "grade8":
+            return chu2EigoQuestions;
+
+        // 🌸 中学3年（既存データを活用）
+        case "grade9":
+            return chu3EigoQuestions;
+
         default:
             // 🌸 小学1・2年など、英語データが未対応の学年
             return [];
@@ -7358,7 +8861,7 @@ function getEnglishDatabase() {
 
 }
 
-// 🌸 英語のボタン表示用：「小学N年」「中学1年」のラベルを返す
+// 🌸 英語のボタン表示用：「小学N年」「中学N年」のラベルを返す
 function getEnglishGradeLabel() {
 
     if (!currentUser || !currentUser.grade) {
@@ -7381,6 +8884,12 @@ function getEnglishGradeLabel() {
 
         case "grade7":
             return "中学1年";
+
+        case "grade8":
+            return "中学2年";
+
+        case "grade9":
+            return "中学3年";
 
         default:
             return null;
@@ -7497,6 +9006,19 @@ function startSelectedEnglish() {
         // 上書きしてしまい、ボタンが横並びにならない
         englishControls.style.display =
             "flex";
+    }
+
+    // 🌸 バグ修正：理科の「けす／こたえる」ボタンが
+    // 表示されたまま残らないように非表示にする
+    const rikaControlsFromEnglish =
+        document.getElementById(
+            "rikaControls"
+        );
+
+    if (rikaControlsFromEnglish) {
+
+        rikaControlsFromEnglish.style.display =
+            "none";
     }
 
     // =========================================
@@ -8263,6 +9785,15 @@ function setupEnterKey() {
 
     if (questionCount >= maxQuestions) return;
 
+    // 🌸 バグ修正：すでに回答済み（mathKeypadAction === "next"）の
+    // 状態でさらにEnterを押すと、同じ答えのままsubmitAnswer()が
+    // 何度も呼ばれてスコア・ポイントが増え続けてしまっていた。
+    // OKボタンをEnterで押した時と同じく、回答済みなら次の問題へ進める。
+    if (mathKeypadAction === "next") {
+        nextQuestion();
+        return;
+    }
+
     submitAnswer();
 
 }
@@ -8999,6 +10530,9 @@ function showReviewQuestion() {
         answerInput.readOnly =
             false;
 
+        // 🌸 国語ボードを使わない問題では「考え方」は元の位置へ
+        restoreFeedbackHome();
+
     }
 
     // =================================
@@ -9069,6 +10603,9 @@ function showReviewQuestion() {
         if (reviewHissan) {
             wireHissanAnswerBoxes();
         }
+
+        // 🌸 「考え方」をテンキーの横（筆算の下）へ移動
+        moveFeedbackTo("mathFeedbackSlot");
 
     }
 
@@ -12458,6 +13995,32 @@ function checkNormal(correct, ans){
         return true;
     }
 
+    // 🌸 バグ修正：立体の体積・角柱の面の数などの問題で、正解データに
+    // 単位（cm²・cm³）が付いていたり付いていなかったりバラバラだった
+    // （例：「96cm³」は文字列で単位つきだが、同じ単元の「60」は
+    // 数字のまま単位なし）。テンキー側は常に cm・cm²・cm³ ボタンを
+    // 出しているため、子どもが単位を付けて入力しても・付けずに
+    // 入力しても、どちらでも正解にできるように、cm²・cm³ を
+    // 取り除いた数値どうしでも比較する。
+    const stripCmUnit = value =>
+        String(value)
+            .replace(/cm²$/i, "")
+            .replace(/cm³$/i, "")
+            .replace(/cm$/i, "");
+
+    const strippedAns = stripCmUnit(ans);
+    const strippedCorrect = stripCmUnit(correct);
+
+    if (
+        strippedAns !== "" &&
+        strippedCorrect !== "" &&
+        !Number.isNaN(Number(strippedAns)) &&
+        !Number.isNaN(Number(strippedCorrect)) &&
+        Number(strippedAns) === Number(strippedCorrect)
+    ) {
+        return true;
+    }
+
     // 🌸 バグ修正：算数以外の記述式問題（英語の日本語訳など）は、
     // 完全一致でなくても「揺らぎ判定」で正解にする。
     // 正解が日本語の文章を含む場合だけ判定する
@@ -13367,13 +14930,55 @@ function getAnswerType(question) {
 
 
     // =========================
-    // 🌸 中1数学
+    // 🌸 中1・中2・中3数学
+    // 🌸 バグ修正：以前はこの詳しい判定が「中1」の問題にしか
+    // 使われておらず、中2・中3の問題（連立方程式・一次関数・
+    // 二次方程式・二次関数・図形の証明など）は下の「小学生向け」の
+    // 簡易判定に回されてしまい、専用テンキー（algebra・equation・
+    // pi など）がまったく使われていなかった。中学の数学は
+    // 学年に関わらず同じ詳しい判定を使うようにする。
     // =========================
 
-    if (question.grade === "中1") {
+    const isJuniorHighMath =
+        question.grade === "中1" ||
+        question.grade === "中2" ||
+        question.grade === "中3";
+
+    if (isJuniorHighMath) {
 
         const answer =
             question.a;
+
+
+        // =========================
+        // 🌸 バグ修正：数学用語12択（mathWord）に登録された
+        // 言葉は、type（algebra・equation など）より先に判定する。
+        // type だけで判定すると、例えば type: "algebra" の単元に
+        // ある「単項式とは？」のような用語問題まで文字式専用の
+        // テンキーに回されてしまい、「単項式」という漢字が
+        // 入力できなくなっていた。
+        // =========================
+
+        if (
+            typeof answer === "string" &&
+            answer.trim() !== ""
+        ) {
+
+            const registeredMathWordsJH =
+                mathKeyLayouts.mathWord.filter(
+                    key =>
+                        key !== "C" &&
+                        key !== "←" &&
+                        key !== "OK"
+                );
+
+            if (registeredMathWordsJH.includes(answer.trim())) {
+
+                return "mathWord";
+
+            }
+
+        }
 
 
         // =========================
@@ -13553,6 +15158,35 @@ function getAnswerType(question) {
         }
 
         // =========================
+        // 🌸 バグ修正：比（例：2:3、3:4）の答えにも
+        // 専用テンキー（ratio）を使う
+        // =========================
+
+        if (
+            typeof answer === "string" &&
+            /^-?\d+(?:\.\d+)?\s*:\s*-?\d+(?:\.\d+)?$/.test(
+                answer.trim()
+            )
+        ) {
+            return "ratio";
+        }
+
+        // =========================
+        // 🌸 バグ修正：ふつうの分数（例：1/2）の答えにも
+        // 専用テンキー（fraction）を使う
+        // （帯分数「2と1/4」のような答えはここでは対象にしない）
+        // =========================
+
+        if (
+            typeof answer === "string" &&
+            /^-?\d+\/\d+$/.test(
+                answer.trim()
+            )
+        ) {
+            return "fraction";
+        }
+
+        // =========================
         // 🌸 数字以外の中1数学用語
         //
         // 例：
@@ -13626,6 +15260,55 @@ function getAnswerType(question) {
             typeof question.a === "string" &&
             /^-?\d+\.\d+$/.test(question.a.trim())
         );
+
+    // =========================
+    // 🌸 バグ修正：小学生の問題でも、比（例：2:3）・座標・
+    // 分数の倍（例：1/2倍）・ふつうの分数（例：1/2）・数学用語
+    // 12択に登録された言葉（例：対称の軸・比例・円）を答える
+    // 問題がある。type（geometry・graph・word など）に応じた
+    // 固定テンキーだけに決め打ちすると、こうした答えは入力
+    // できない。type による判定より先にチェックする。
+    // =========================
+
+    if (
+        !isJuniorHighMath &&
+        typeof question.a === "string" &&
+        question.a.trim() !== "" &&
+        !isPlainNumericAnswer
+    ) {
+
+        const elemAnswer =
+            question.a.trim();
+
+        if (/^-?\d+(?:\.\d+)?\s*:\s*-?\d+(?:\.\d+)?$/.test(elemAnswer)) {
+            return "ratio";
+        }
+
+        if (/^\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*\)$/.test(elemAnswer)) {
+            return "coordinate";
+        }
+
+        if (/^\d+(?:\/\d+)?倍$/.test(elemAnswer)) {
+            return "fractionTimes";
+        }
+
+        if (/^-?\d+\/\d+$/.test(elemAnswer)) {
+            return "fraction";
+        }
+
+        const registeredMathWordsElem =
+            mathKeyLayouts.mathWord.filter(
+                key =>
+                    key !== "C" &&
+                    key !== "←" &&
+                    key !== "OK"
+            );
+
+        if (registeredMathWordsElem.includes(elemAnswer)) {
+            return "mathWord";
+        }
+
+    }
 
     switch (question.type) {
 
@@ -13784,6 +15467,13 @@ const mathKeyLayouts = {
 
         "(",")","円",
 
+        // 🌸 バグ修正：中2・中3数学（連立方程式・一次関数・
+        // 二次方程式・二次関数など）では y・b・√・累乗（⁵・⁶など）
+        // を使う答えが増えるため、文字式テンキーに追加する。
+        "y","b","√",
+
+        "⁵","⁶",
+
         "C","←","OK"
 
     ],
@@ -13804,6 +15494,10 @@ const mathKeyLayouts = {
         "0","x","=",
 
         "+","-","、",
+
+        // 🌸 バグ修正：中2・中3数学の連立方程式（y を含む式）や、
+        // 座標・組の答え（例：x=2, y=3）を入力できるように追加。
+        "y",",",
 
         "C","←","OK"
 
@@ -13869,6 +15563,34 @@ const mathKeyLayouts = {
         "1","2","3",
         "0","/","倍",
         "C","←","OK"
+    ],
+
+
+    // =========================
+    // 🌸 座標（比例・反比例など）
+    // 例：(2, 6)、(-3, 5)
+    // =========================
+
+    coordinate: [
+        "7","8","9",
+        "4","5","6",
+        "1","2","3",
+        "0","-","(",
+        ")",",","C",
+        "←","OK"
+    ],
+
+
+    // =========================
+    // 🌸 比（例：2:3、3:4）
+    // =========================
+
+    ratio: [
+        "7","8","9",
+        "4","5","6",
+        "1","2","3",
+        "0",":","C",
+        "←","OK"
     ],
 
 
@@ -13988,6 +15710,92 @@ mathWord: [
 "範囲（レンジ）",
 "ヒストグラム",
 "相対度数（確率）",
+
+// 🌸 バグ修正：中1以外の学年（小学生など）の図形・文章題にも
+// 登録済みの数学用語がないと、専用テンキー（textGeometry・text）
+// に無い文字（円・中心・比例など）が入力できなくなっていた。
+"円",
+"中心",
+"対称の中心",
+"二等辺三角形",
+"合同",
+"等しい",
+"比例",
+"反比例",
+"1万",
+"人数（度数）が最も多い階級",
+
+// 🌸 バグ修正：中2・中3数学（文字式・連立方程式・図形の証明・
+// 一次関数・二次方程式・二次関数・相似・三平方の定理・標本調査など）
+// の答えに使われる用語・記号を専用テンキーに登録し、入力できるようにする。
+"単項式",
+"係数",
+"次数",
+"同類項",
+"連立方程式",
+"加減法",
+"代入法",
+"一次関数",
+"傾き（変化の割合）",
+"切片",
+"1減る",
+"二次関数など",
+"直線",
+"右上がり",
+"右下がり",
+"変化の割合",
+"同位角",
+"錯角",
+"180×(n-2)度",
+"3組の辺がそれぞれ等しい（三辺相等）",
+"2組の辺とその間の角がそれぞれ等しい（二辺夾角相等）",
+"1組の辺とその両端の角がそれぞれ等しい（一辺両端角相等）",
+"それぞれ等しい",
+"証明",
+"仮定・定理など",
+"四分位数",
+"第1四分位数",
+"第2四分位数（中央値）",
+"四分位範囲",
+"箱ひげ図",
+"共通因数",
+"因数分解",
+"約1.41",
+"約1.73",
+"無理数（循環しない無限小数）",
+"分母の有理化",
+"x=(-b±√(b²-4ac))/2a",
+"x=-1±√2",
+"判別式b²-4acが負のとき",
+"放物線",
+"上（上に開く）",
+"下（下に開く）",
+"y軸",
+"(0,0)（原点）",
+"せまくなる",
+"a=bまたはa=-b（絶対値が等しい）",
+"y=ax²の形の関数",
+"はい（比較で求まる）",
+"相似",
+"相似比",
+"2組の角がそれぞれ等しい",
+"3組の辺の比がすべて等しい",
+"2組の辺の比とその間の角がそれぞれ等しい",
+"m²:n²",
+"m³:n³",
+"平行で長さが半分",
+"すべて等しい",
+"円周角の定理（の逆）",
+"a²+b²=c²",
+"√2 cm",
+"3√3 cm",
+"直角三角形",
+"全数調査",
+"標本調査",
+"母集団",
+"標本（サンプル）",
+"無作為抽出",
+
 "C",
 "←",
 "OK"
@@ -14094,6 +15902,42 @@ layout.push("C", "←", "OK");
         layout
     );
 
+} else if (type === "algebra") {
+
+    // 🌸 バグ修正：文字式のテンキーは、中1〜中3のいろいろな問題
+    // （y・b・√・累乗・かっこ・円 を使うものなど）に対応するため
+    // 記号をすべて詰め込んでいたが、そのせいで「2x+3」のような
+    // 簡単な答えの問題でもキーボードがとても長くなってしまい、
+    // 画面をスクロールしないと全部見えなかった。
+    // 数字（0〜9）とC・←・OKは今まで通り常に表示しつつ、
+    // x・y・a・b・+・-・²・³・⁵・⁶・(・)・円・√は、今の問題の
+    // 正解の中に実際に出てくる記号だけを表示するようにする。
+
+    const currentAnswer =
+        correctAnswerOverride !== undefined
+            ? correctAnswerOverride
+            : quizState.currentQuestion?.a;
+
+    const answerStr =
+        String(currentAnswer ?? "");
+
+    const optionalAlgebraKeys =
+        ["x", "y", "a", "b", "+", "-", "²", "³", "⁵", "⁶", "(", ")", "円", "√"];
+
+    const neededAlgebraKeys =
+        optionalAlgebraKeys.filter(
+            key => answerStr.includes(key)
+        );
+
+    layout = [
+        "7", "8", "9",
+        "4", "5", "6",
+        "1", "2", "3",
+        "0",
+        ...neededAlgebraKeys,
+        "C", "←", "OK"
+    ];
+
 } else {
 
     // 🌸 既存テンキー
@@ -14123,8 +15967,18 @@ layout.push("C", "←", "OK");
 
         btn.className = "keypadBtn";
 
-if (key === "図形の移動（合同変換）") {
-    btn.classList.add("longWord");
+// 🌸 バグ修正：長い数学用語（例：「2組の辺とその間の角が
+// それぞれ等しい（二辺夾角相等）」）がボタンからはみ出て
+// 表示されていた。以前は特定の1つの言葉だけを決め打ちで
+// 小さいフォントにしていたが、中2・中3数学で長い説明つきの
+// 用語をたくさん追加したため、文字数に応じて自動で
+// フォントサイズを調整するようにする。
+if (type === "mathWord") {
+    if (key.length > 16) {
+        btn.classList.add("veryLongWord");
+    } else if (key.length > 10) {
+        btn.classList.add("longWord");
+    }
 }
 
 // 🌸 バグ修正：「あまり」キーがボタン枠からはみ出るのを防ぐ

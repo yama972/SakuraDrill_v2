@@ -70,6 +70,12 @@
         <button onclick="setGrade('grade7')" class="gradeBtn">
          中学1年
         </button>
+        <button onclick="setGrade('grade8')" class="gradeBtn">
+         中学2年
+        </button>
+        <button onclick="setGrade('grade9')" class="gradeBtn">
+         中学3年
+        </button>
     </div>
 
     <hr>
@@ -136,6 +142,13 @@
                 <small>10～50問に挑戦！</small>
             </button>
 
+            <!-- 🌸 うんちくクイズ（一服タイム。得点・学習記録には残らない） -->
+            <button class="subjectBtn trivia" onclick="startTriviaBreak()">
+                🍵<br>
+                <strong>うんちく</strong><br>
+                <small>ちょっと一服♪</small>
+            </button>
+
             <button class="subjectBtn studyRecord" onclick="showStudyRecord()">
                 📊<br>
                 <strong>学習レポート</strong><br>
@@ -150,6 +163,36 @@
         </div> <!-- subjectGrid終了 -->
         <!-- 🌸 ナビゲーション -->
                 </div>
+
+<!-- 🌸 うんちくクイズ（一服タイム）
+     47都道府県のうんちくを気軽に楽しむための画面。
+     採点・Sakura Point・学習レポート・復習リストには
+     いっさい記録されない、完全に気楽なおまけ機能。 -->
+<div id="triviaArea" class="card" style="display:none;">
+
+    <h2>🍵 都道府県うんちくクイズ</h2>
+
+    <p class="message">
+        ちょっと一服♪ 得点や記録には残らないよ
+    </p>
+
+    <div id="triviaPrefTag" class="triviaPrefTag"></div>
+
+    <div id="triviaQuestionText" class="questionBox"></div>
+
+    <div id="triviaChoices" class="triviaChoices"></div>
+
+    <div id="triviaFeedback" class="triviaFeedback"></div>
+
+    <button id="triviaNextBtn" class="mainBtn" style="display:none;" onclick="showNextTrivia()">
+        ➡ 次のうんちく
+    </button>
+
+    <button class="menuBtn" onclick="backFromTrivia()">
+        📚 教科選択へ戻る
+    </button>
+
+</div>
 
 <!-- 🌸 Engine20 学習レポート -->
 <div id="studyRecordArea" class="card" style="display:none;">
@@ -263,8 +306,6 @@
         <p id="studyRecordPoint">
             0P
         </p>
-
-    </div>
 
     <button class="menuBtn" onclick="backToSubjectHome()">
         📚 教科選択へ戻る
@@ -1137,71 +1178,93 @@
 
         </div>
 
-        <!-- 🌸 筆算スペース（式の横に表示。マスに数字を書き込める・採点はされません） -->
-        <div id="hissanScratchWrap" style="display:none;">
-            <div class="hissanScratchLabel">📝 ひっ算（すうじボードから入力できるよ）</div>
-            <div id="hissanPanelContent" class="hissanPanelContent"></div>
+        <!-- 🌸 筆算とかんがえかた（考え方）をキーボードの右にまとめる列 -->
+        <div id="mathSideCol">
+
+            <!-- 🌸 筆算スペース（式の横に表示。マスに数字を書き込める・採点はされません） -->
+            <div id="hissanScratchWrap" style="display:none;">
+                <div class="hissanScratchLabel">📝 ひっ算（すうじボードから入力できるよ）</div>
+                <div id="hissanPanelContent" class="hissanPanelContent"></div>
+            </div>
+
+            <!-- 🌸 考え方（フィードバック）はJSでここに移動してくる -->
+            <div id="mathFeedbackSlot" class="feedbackSlot"></div>
+
         </div>
 
     </div>
 <!-- 🌸 国語・読みボード -->
 <div id="kokugoReadingBoard" style="display:none;">
 
-    <div id="kokugoReadingAnswer"></div>
+    <div id="kokugoReadingMain">
 
-    <div id="kokugoReadingChoices"></div>
+        <div id="kokugoReadingAnswer"></div>
 
-    <div id="kokugoReadingControls" class="kokugoReadingControls">
+        <div id="kokugoReadingChoices"></div>
 
-        <button
-            type="button"
-            onclick="clearKokugoReadingAnswer()">
-            ⌫ けす
-        </button>
+        <div id="kokugoReadingControls" class="kokugoReadingControls">
 
-        <button
-            type="button"
-            onclick="submitKokugoAnswer()">
-            ⭕ こたえる
-        </button>
+            <button
+                type="button"
+                onclick="clearKokugoReadingAnswer()">
+                ⌫ けす
+            </button>
+
+            <button
+                type="button"
+                onclick="submitKokugoAnswer()">
+                ⭕ こたえる
+            </button>
+
+        </div>
 
     </div>
+
+    <!-- 🌸 解説（フィードバック）はJSでここに移動してくる -->
+    <div id="kokugoReadingFeedbackSlot" class="feedbackSlot"></div>
 
 </div>
 
 <!-- 🌸 国語・漢字書きボード -->
 <div id="kokugoWritingBoard" style="display:none;">
 
-    <!-- 🌸 お手本の漢字 -->
-    <div id="kokugoWritingTarget"></div>
+    <div id="kokugoWritingMain">
 
-    <!-- 🌸 20枠のはめ込みボード -->
-    <div id="kokugoWritingChoices"></div>
+        <!-- 🌸 お手本の漢字 -->
+        <div id="kokugoWritingTarget"></div>
 
-    <!-- 🌸 バラバラになった漢字の画 -->
-    <div id="kokugoWritingParts"></div>
+        <!-- 🌸 20枠のはめ込みボード -->
+        <div id="kokugoWritingChoices"></div>
 
-    <!-- 🌸 選択した画 -->
-    <div id="kokugoWritingAnswer"></div>
+        <!-- 🌸 バラバラになった漢字の画 -->
+        <div id="kokugoWritingParts"></div>
 
-    <!-- 🌸 正しい順番ではめ込む場所 -->
-    <div id="kokugoWritingAnswerBoard"></div>
+        <!-- 🌸 選択した画 -->
+        <div id="kokugoWritingAnswer"></div>
 
-    <div id="kokugoWritingControls" class="kokugoWritingControls">
+        <!-- 🌸 正しい順番ではめ込む場所 -->
+        <div id="kokugoWritingAnswerBoard"></div>
 
-        <button
-            type="button"
-            onclick="clearKokugoWritingAnswer()">
-            ⌫ けす
-        </button>
+        <div id="kokugoWritingControls" class="kokugoWritingControls">
 
-        <button
-            type="button"
-            onclick="submitKokugoWritingAnswer()">
-            ⭕ こたえる
-        </button>
+            <button
+                type="button"
+                onclick="clearKokugoWritingAnswer()">
+                ⌫ けす
+            </button>
+
+            <button
+                type="button"
+                onclick="submitKokugoWritingAnswer()">
+                ⭕ こたえる
+            </button>
+
+        </div>
 
     </div>
+
+    <!-- 🌸 解説（フィードバック）はJSでここに移動してくる -->
+    <div id="kokugoWritingFeedbackSlot" class="feedbackSlot"></div>
 
 </div>
 
@@ -1619,6 +1682,8 @@
                         <script src="data/math/grade5_math.js"></script>
                         <script src="data/math/grade6_math.js"></script>
                         <script src="data/math/chu1_math.js"></script>
+                        <script src="data/math/chu2_math.js"></script>
+                        <script src="data/math/chu3_math.js"></script>
                         <!-- 🌸 国語データベース -->
                         <script src="data/kokugo/grade1_kokugo.js"></script>
                         <script src="data/kokugo/grade2_kokugo.js"></script>
@@ -1630,19 +1695,30 @@
                         <script src="data/kokugo/kanji_writing.js"></script>
                         <!-- 🌸 国語・中学1年（127問。読み・書き・文法・ことわざ・語句・古典） -->
                         <script src="data/kokugo/chu1_kokugo.js"></script>
+                        <!-- 🌸 国語・中学2年（135問。読み・書き・文法・ことわざ・語句・古典） -->
+                        <script src="data/kokugo/chu2_kokugo.js"></script>
+                        <!-- 🌸 国語・中学3年（132問。読み・書き・文法・ことわざ・語句・古典） -->
+                        <script src="data/kokugo/chu3_kokugo.js"></script>
 
                         <script src="data/rika/grade3_rika.js"></script>
                         <script src="data/rika/grade4_rika.js"></script>
                         <script src="data/rika/grade5_rika.js"></script>
                         <script src="data/rika/grade6_rika.js"></script>
                         <script src="data/rika/chu1_rika.js"></script>
+                        <script src="data/rika/chu2_rika.js"></script>
+                        <script src="data/rika/chu3_rika.js"></script>
 
                         <script src="data/eigo/grade34_eigo.js"></script>
                         <script src="data/eigo/grade5_eigo.js"></script>
                         <script src="data/eigo/grade6_eigo.js"></script>
                         <script src="data/eigo/chu1_eigo.js"></script>
+                        <script src="data/eigo/chu2_eigo.js"></script>
+                        <script src="data/eigo/chu3_eigo.js"></script>
                         <!-- 全国問題管理 -->
                         <script src="data/prefectures/japan_questions.js"></script>
+
+                        <!-- 🌸 うんちくクイズ（一服タイム。47都道府県・471問） -->
+                        <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
                         <script src="script.js"></script>

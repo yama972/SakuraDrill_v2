@@ -387,6 +387,23 @@ button {
     white-space: nowrap;
 }
 
+/* 🌸 式の中に入れる、小さな分数表示（例：球の体積の公式の「4/3」）。
+   分子・分母を横線（.hissanFracBar）ではさんで縦に並べるだけの、
+   文中インライン用の小さいバージョン。 */
+.hissanInlineFraction {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.15;
+    margin: 0 2px;
+    vertical-align: middle;
+}
+
+.hissanInlineFraction .hissanFracBar {
+    border-top-width: 2px;
+    margin: 1px 0;
+}
+
 /* 🌸 一次方程式の筆算：移項してxを孤立させる過程を、
    段（①②③）ごとに分けて表示する。 */
 .hissanEquationPanel {
@@ -418,6 +435,30 @@ button {
 .hissanEquationBoxes {
     display: flex;
     gap: 3px;
+}
+
+/* 🌸 立体の体積の筆算：「たて×よこ」→「×高さ」のように、
+   1段階ずつのかけ算・わり算の筆算を、段（①②③）ごとに
+   分けて縦に並べて表示する。 */
+.hissanVolumePanel {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin: 10px auto;
+}
+
+.hissanVolumeStep {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.hissanVolumeStepLabel {
+    font-size: 13px;
+    font-weight: normal;
+    color: #999;
+    margin-bottom: 4px;
 }
 
 .hissanDivQuotientRow {
@@ -485,6 +526,19 @@ button {
 #feedback {
     margin-top: 10px;
     font-size: 18px;
+}
+
+/* 🌸 バグ修正：「考え方／ヒント」の説明文が、幅の狭い枠の中で
+   1文字だけ・2文字だけが最後の行に残るような、不自然なところで
+   折り返されてしまっていた（例：「…半径と／います。」）。
+   text-wrapがbalanceに対応しているブラウザでは、複数行になる
+   時だけ行の長さのバランスを取ってくれるので、途中の行が
+   不自然に長い・短いにならず、読みやすいところで折り返される
+   ようになる（対応していないブラウザでは今まで通りの折り返し
+   のまま、表示が崩れることはない）。 */
+.feedbackMemo {
+    margin: 0;
+    text-wrap: balance;
 }
 
 /* 🌸 スコア */
@@ -1548,13 +1602,41 @@ button {
    🌸 Engine16 算数テンキー
 =================================== */
 
-/* 🌸 テンキーと筆算メモを横に並べる（狭い画面では自動で折り返す） */
+/* 🌸 テンキーと筆算メモを横に並べる（狭い画面では自動で折り返す）
+   バグ修正：テンキーの右に筆算／考え方の列（#mathSideCol）を
+   並べると、その列の分だけ見た目の中心が右にずれてしまい、
+   上の回答欄（画面全体で中央そろえ）とテンキーの位置がずれて
+   見えていた。左右対称な3列グリッド（左：空の同幅スペーサー／
+   中央：テンキー／右：#mathSideCol）にすることで、右の列の
+   有無や幅に関わらずテンキーが常に真ん中にそろうようにする。
+   画面が狭い時（スマホなど）は、無理に横幅を確保せず、
+   今まで通り縦に折り返す表示に切り替える。 */
 #mathKeypadWrap {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 340px auto 340px;
     justify-content: center;
-    align-items: flex-start;
+    align-items: start;
     gap: 20px;
+}
+
+#mathKeypad {
+    grid-column: 2;
+}
+
+#mathSideCol {
+    grid-column: 3;
+}
+
+@media (max-width: 900px) {
+
+    #mathKeypadWrap {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
 }
 
 #mathKeypad {
@@ -1588,6 +1670,23 @@ button {
     border-radius: 10px;
     background: #fffdf5;
     box-sizing: border-box;
+}
+
+/* 🌸 筆算スペースと「考え方」を縦に並べる、キーボード右側の列
+   （スクロールを減らすため、考え方はJSでこの中に移動してくる） */
+#mathSideCol {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    min-width: 180px;
+    max-width: 340px;
+    margin: 20px 0;
+}
+
+#mathSideCol #feedback,
+.feedbackSlot #feedback {
+    margin-top: 0;
 }
 
 .hissanScratchLabel {
@@ -2092,9 +2191,39 @@ button {
 =================================== */
 
 #kokugoReadingBoard {
-    width: 90%;
-    max-width: 500px;
+    width: 95%;
+    max-width: 900px;
     margin: 20px auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+}
+
+#kokugoReadingMain {
+    width: 100%;
+    max-width: 500px;
+}
+
+/* 🌸 「解説」をキーボードの右に表示する列
+   （JSでここに考え方の中身が移動してくる） */
+#kokugoReadingFeedbackSlot.feedbackSlot {
+    flex: 1;
+    min-width: 200px;
+}
+
+#kokugoWritingBoard {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+}
+
+#kokugoWritingFeedbackSlot.feedbackSlot {
+    flex: 1;
+    min-width: 200px;
 }
 
 #kokugoReadingAnswer {
@@ -2361,29 +2490,72 @@ button {
 
 
 /* 🌸 数学用語ボタン */
+/* 🌸 バグ修正：中2・中3数学で追加した数学用語には、
+   「2組の辺とその間の角がそれぞれ等しい（二辺夾角相等）」
+   のような長い説明つきの答えがある。今まで通り改行なし
+   （nowrap）のままだと、ボタンの枠からはみ出して他のボタンと
+   重なって表示されてしまう。長い言葉は折り返して複数行で
+   表示できるようにし、ボタンの高さも中身に合わせて伸びる
+   ようにする。 */
 
 #mathKeypad.wordMode .keypadBtn {
 
-    white-space: nowrap !important;
+    white-space: normal;
 
-    word-break: keep-all !important;
+    /* 🌸 バグ修正：word-break:keep-all のままだと、区切りの記号
+       （括弧など）が無い純粋な日本語の文章（例：「その間の角が
+       それぞれ等しい」）に改行できる場所が無いとみなされ、
+       1行のまま枠からはみ出してしまっていた。normal にすると
+       日本語の文字と文字の間で普通に折り返せるようになる。 */
+    word-break: normal;
 
-    overflow-wrap: normal !important;
+    overflow-wrap: anywhere;
 
     width: 100%;
 
-    height: 70px;
+    min-height: 70px;
+
+    height: auto;
 
     font-size: 18px;
+
+    line-height: 1.3;
+
+    padding: 8px 6px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
 
 }
 
 
-/* 🌸 長い数学用語 */
+/* 🌸 長い数学用語（11〜16文字くらい） */
 
 #mathKeypad .keypadBtn.longWord {
 
     font-size: 14px !important;
+
+    line-height: 1.25 !important;
+
+}
+
+
+/* 🌸 バグ修正：さらに長い数学用語（17文字以上、例：
+   「2組の辺とその間の角がそれぞれ等しい（二辺夾角相等）」）は
+   14pxでも折り返した時に読みづらいため、もう一段小さくする */
+
+#mathKeypad .keypadBtn.veryLongWord {
+
+    font-size: 12px !important;
+
+    line-height: 1.2 !important;
 
 }
 
@@ -2419,4 +2591,77 @@ button {
 .manualInputBtn {
     grid-column: 1 / -1;
     white-space: nowrap;
+}
+
+/* 🌸 うんちくクイズ（一服タイム）
+   採点・学習記録にはいっさい関わらない、気軽なおまけ機能。
+   カードの色は「お茶（一服）」をイメージした暖色にする。 */
+.subjectBtn.trivia {
+
+    background: linear-gradient(
+        135deg,
+        #FBF3E7,
+        #F0E0C0
+    );
+
+    color: #7A5230;
+
+    border: 1px solid #E6CFA0;
+
+}
+
+.triviaPrefTag {
+    font-size: 16px;
+    color: #8A5A22;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.triviaChoices {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin: 20px auto;
+    max-width: 480px;
+}
+
+.triviaChoiceBtn {
+    width: 100%;
+    padding: 14px;
+    font-size: 18px;
+    font-weight: bold;
+    border: 1px solid #e0d5c0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.triviaChoiceBtn:hover:not(:disabled) {
+    transform: scale(1.03);
+    background: #FBF3E7;
+}
+
+.triviaChoiceBtn:disabled {
+    cursor: default;
+}
+
+.triviaChoiceCorrect {
+    background: #E8F8EC !important;
+    border-color: #6FCF97 !important;
+    color: #1E7A3D;
+}
+
+.triviaChoiceWrong {
+    background: #FDEAEA !important;
+    border-color: #E07A7A !important;
+    color: #b23b3b;
+}
+
+.triviaFeedback {
+    font-size: 18px;
+    margin-top: 10px;
+    min-height: 24px;
 }
