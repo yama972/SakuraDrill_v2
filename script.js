@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.5 Stable_10_24_09_08";
+const APP_VERSION = "★★★★TEST★★★★";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -6629,55 +6629,82 @@ function buildHissanDivisionBoxStepByStep(aStr, bStr, answerStr) {
         // ① この段の商（1桁）
         quotientIdxByCol[cyc.col] = boxIndex++;
 
-        // ② 商×わる数（積）：現在値（current）と同じ桁数ぶんの
-        // 列を右づめで使う。積の桁数が足りない分は左側を空欄にする。
-        // 実際に数字を書く時と同じく、上の位（左）→下の位（右）の順。
-        const currentDigits = digitsOf(cyc.current);
-        const productDigits = digitsOf(cyc.product);
-        const productPad = currentDigits.length - productDigits.length;
-        const productStartCol = cyc.col - currentDigits.length + 1;
+        // ② 商×わる数：わる数が2桁以上の時は、大きい位（十の位など）→
+        // 小さい位（一の位）の順に分けて、その都度「かけて→ひく」を
+        // くり返す（例：33÷11なら、まず10の位ぶん 3×10=30 を引いて
+        // 33-30=3、次に1の位ぶん 3×1=3 を引いて 3-3=0）。
+        // わる数が1桁の時は、今まで通り1回だけの「かけて→ひく」になる。
+        const divisorDigitsStr = String(D);
+        const divisorLen = divisorDigitsStr.length;
 
-        const productCells = new Array(totalDigitCols).fill(null);
+        let stepValue = cyc.current;
+        let stepEndCol = cyc.col;
 
-        for (let k = 0; k < currentDigits.length; k++) {
+        for (let dPos = 0; dPos < divisorLen; dPos++) {
 
-            if (k >= productPad) {
-                productCells[productStartCol + k] = { idx: boxIndex++ };
+            const isFinalStep = dPos === divisorLen - 1;
+            const placeValue = Math.pow(10, divisorLen - 1 - dPos);
+            const divisorDigit = Number(divisorDigitsStr[dPos]);
+            const partialProduct = cyc.qDigit * divisorDigit * placeValue;
+
+            // 🌸 この位ぶんの積：今の位置（stepEndCol）で終わるように
+            // 右づめで書く（実際に数字を書く時と同じく上の位→下の位）。
+            const partialDigits = digitsOf(partialProduct);
+            const partialStartCol = stepEndCol - partialDigits.length + 1;
+            const partialCells = new Array(totalDigitCols).fill(null);
+
+            for (let k = 0; k < partialDigits.length; k++) {
+                partialCells[partialStartCol + k] = { idx: boxIndex++ };
             }
 
+            const partialRowHTML = renderRow(false, (col) => partialCells[col]);
+
+            // 🌸 ひき算した結果。わる数の一番小さい位（最後のステップ）の
+            // 時だけ、今まで通り「本当のあまり（＋次に降ろす桁）」に
+            // 合わせる。ひき算の繰り下がりがあるため、下の位（右）→
+            // 上の位（左）の順でマスの番号をふる。
+            let resultValue;
+            let resultEndCol;
+
+            if (isFinalStep) {
+
+                const isLast = c === cycles.length - 1;
+                resultValue = isLast ? cyc.remainder : cycles[c + 1].current;
+                resultEndCol = isLast ? cyc.col : cycles[c + 1].col;
+
+            } else {
+
+                resultValue = stepValue - partialProduct;
+                resultEndCol = stepEndCol;
+
+            }
+
+            const resultDigits = digitsOf(resultValue);
+            const resultStartCol = resultEndCol - resultDigits.length + 1;
+            const resultIdx = new Array(resultDigits.length);
+
+            for (let k = resultDigits.length - 1; k >= 0; k--) {
+                resultIdx[k] = boxIndex++;
+            }
+
+            const resultCells = new Array(totalDigitCols).fill(null);
+
+            for (let k = 0; k < resultDigits.length; k++) {
+                resultCells[resultStartCol + k] = { idx: resultIdx[k] };
+            }
+
+            const resultRowHTML = renderRow(false, (col) => resultCells[col]);
+
+            cycleRowsHTML.push(`
+                ${partialRowHTML}
+                <div class="hissanDivSubLine"></div>
+                ${resultRowHTML}
+            `);
+
+            stepValue = resultValue;
+            stepEndCol = resultEndCol;
+
         }
-
-        const productRowHTML = renderRow(false, (col) => productCells[col]);
-
-        // ③ あまり（＋次に降ろす桁）：最後の段は「本当のあまり」だけ、
-        // それ以外の段は「次の段の現在値（＝あまりの後ろに次の桁を
-        // 降ろしてつなげた数）」と同じ値になる。ひき算の繰り下がりが
-        // あるため、下の位（右）→上の位（左）の順でマスの番号をふる。
-        const isLast = c === cycles.length - 1;
-        const remainderValue = isLast ? cyc.remainder : cycles[c + 1].current;
-        const remainderEndCol = isLast ? cyc.col : cycles[c + 1].col;
-        const remainderDigits = digitsOf(remainderValue);
-        const remainderStartCol = remainderEndCol - remainderDigits.length + 1;
-
-        const remainderIdx = new Array(remainderDigits.length);
-
-        for (let k = remainderDigits.length - 1; k >= 0; k--) {
-            remainderIdx[k] = boxIndex++;
-        }
-
-        const remainderCells = new Array(totalDigitCols).fill(null);
-
-        for (let k = 0; k < remainderDigits.length; k++) {
-            remainderCells[remainderStartCol + k] = { idx: remainderIdx[k] };
-        }
-
-        const remainderRowHTML = renderRow(false, (col) => remainderCells[col]);
-
-        cycleRowsHTML.push(`
-            ${productRowHTML}
-            <div class="hissanDivSubLine"></div>
-            ${remainderRowHTML}
-        `);
 
     });
 
@@ -10821,12 +10848,6 @@ function finishReview() {
 
 
     reviewMode = false;
-
-
-
-    alert(
-        `🌸 復習終了！\n\n${finalReviewScore} / ${finalReviewCount} 問正解`
-    );
 
 
 
