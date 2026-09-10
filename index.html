@@ -11,7 +11,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <link rel="stylesheet" href="style.css?v=20260910-1">
+    <link rel="stylesheet" href="style.css?v=20260910-10">
 
     <title>SakuraDrill</title>
 
@@ -20,7 +20,7 @@
          新しいバージョンが公開されていたら自動的に読み込み直す。
          ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
     <script>
-        window.SAKURA_BUILD = "20260910-1";
+        window.SAKURA_BUILD = "20260910-10";
         (function () {
             fetch("version.txt", { cache: "no-store" })
                 .then(function (res) { return res.text(); })
@@ -1274,6 +1274,22 @@
 
     <div id="kokugoWritingMain">
 
+        <!-- 🌸 熟語のとき「今どの字を書いているか」を表示 -->
+        <div id="kokugoWritingWordProgress"></div>
+
+        <!-- 🌸 小1・小2：升目になぞって書く方式 -->
+        <div id="kokugoWritingTraceArea" style="display:none;">
+
+            <div id="kokugoWritingTraceBadge"></div>
+
+            <div id="kokugoWritingTraceBoxWrap">
+                <svg id="kokugoWritingTraceSvg" viewBox="0 0 100 100"></svg>
+            </div>
+
+            <div id="kokugoWritingTraceTip"></div>
+
+        </div>
+
         <!-- 🌸 お手本の漢字 -->
         <div id="kokugoWritingTarget"></div>
 
@@ -1299,6 +1315,7 @@
 
             <button
                 type="button"
+                id="kokugoWritingSubmitBtn"
                 onclick="submitKokugoWritingAnswer()">
                 ⭕ こたえる
             </button>
@@ -1730,13 +1747,13 @@
                         <script src="data/math/chu3_math.js"></script>
                         <!-- 🌸 国語データベース -->
                         <script src="data/kokugo/grade1_kokugo.js"></script>
-                        <script src="data/kokugo/grade2_kokugo.js"></script>
+                        <script src="data/kokugo/grade2_kokugo.js?v=20260910-10"></script>
                         <script src="data/kokugo/grade3_kokugo.js"></script>
                         <script src="data/kokugo/grade4_kokugo.js"></script>
                         <script src="data/kokugo/grade5_kokugo.js"></script>
                         <script src="data/kokugo/grade6_kokugo.js"></script>
-                        <!-- 🌸 国語・漢字書きデータ（現状は小学2年の漢字40字分のみ収録） -->
-                        <script src="data/kokugo/kanji_writing.js"></script>
+                        <!-- 🌸 国語・漢字書きデータ（小学2年の配当漢字160字すべて収録） -->
+                        <script src="data/kokugo/kanji_writing.js?v=20260910-10"></script>
                         <!-- 🌸 国語・中学1年（127問。読み・書き・文法・ことわざ・語句・古典） -->
                         <script src="data/kokugo/chu1_kokugo.js"></script>
                         <!-- 🌸 国語・中学2年（135問。読み・書き・文法・ことわざ・語句・古典） -->
@@ -1765,7 +1782,7 @@
                         <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
-                        <script src="script.js?v=20260910-1"></script>
+                        <script src="script.js?v=20260910-10"></script>
 
 
                         

@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.7 Stable_09_10";
+const APP_VERSION = "v7.15 Stable_09_10";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -121,6 +121,12 @@ let socialWrongList = [];
 let currentKokugoQuiz = [];
 let kokugoIndex = 0;
 let kokugoScore = 0;
+// 🌸 バグ修正：もともとの問題数（例：10問）。
+// 🌸 なぞり書きの間違いをドリルの最後にもう一度出題する際、
+// 🌸 currentKokugoQuiz.length が増えてしまい「第◯問／◯」の
+// 🌸 分母（全体数）がどんどん増えて見えてしまっていたため、
+// 🌸 表示用に「もともとの問題数」を別に覚えておく
+let kokugoOriginalQuizLength = 0;
 let currentKokugoQuestion = null;
 let kokugoMode = false;
 
@@ -128,6 +134,43 @@ let kokugoMode = false;
 let kokugoBoardAnswer = "";
 // 🌸 国語・1問の回答済みフラグ
 let kokugoAnswered = false;
+
+// 🌸 国語・漢字書き（熟語・送り仮名対応）
+// 🌸 答えの文字列から取り出した「書く対象の漢字」のリストと、
+// 🌸 今どの文字を書いている途中かのインデックス
+let kokugoWritingChars = [];
+let kokugoWritingCharIndex = 0;
+
+// 🌸 国語・漢字書き（小1・小2 なぞる方式）
+let kokugoTraceMode = false;
+let kokugoTraceStrokeIndex = 0;
+let kokugoTraceDrawing = false;
+let kokugoTracePoints = [];
+let kokugoTracePointerId = null;
+let kokugoTraceRefPathEl = null;
+let kokugoTraceInkEl = null;
+let kokugoTraceRetryTimeoutId = null;
+let kokugoTraceAdvanceTimeoutId = null;
+
+// 🌸 国語・漢字書き（なぞる方式・自由順＆最後にまとめて採点）
+// 🌸 まだなぞっていない画の番号一覧（順番は問わない）
+let kokugoTraceRemainingIndices = [];
+// 🌸 各画（お手本の画番号がキー）が最終的に合っていたか
+let kokugoTraceStrokeOutcomes = [];
+// 🌸 今の単語（熟語）の中で1画でも間違いがあったか
+let kokugoTraceWordHadMistake = false;
+// 🌸 今の文字で、実際になぞった順番（お手本の画番号を、
+// 🌸 なぞり終えた順に記録する。書き順が合っているかの判定に使う）
+let kokugoTraceClaimOrder = [];
+// 🌸 今の単語（熟語）の中で1文字でも書き順が違っていたか
+let kokugoTraceWordHadOrderMistake = false;
+// 🌸 お手本アニメーション再生中かどうか（再生中はなぞれない）
+let kokugoTraceInputEnabled = false;
+// 🌸 お手本アニメーションのタイマーID一覧（後片付け用）
+let kokugoTraceDemoTimeoutIds = [];
+// 🌸 各画のガイド用SVG要素（お手本→うすいガイド→採点結果の色まで
+// 🌸 同じ要素を使い回す）
+let kokugoTraceGuidePathEls = [];
 
 // 🌸 理科（小学3〜6年・中学1年）
 let currentRikaQuiz = [];
@@ -2034,9 +2077,18 @@ function startGrade2Kokugo() {
 
     }
 
-    const isGrade2 =
-        currentUser &&
-        currentUser.grade === "grade2";
+    // =========================================
+    // 🌸 バグ修正：全学年対応
+    // 「漢字の書き」データは KanjiVG から自動生成した
+    // ものに拡充したため、小学2年だけでなく
+    // その学年に kanjiWriting 問題があるかどうかで判定する
+    // =========================================
+
+    const hasKanjiWriting =
+        getKokugoDatabase().some(
+            question =>
+                question.type === "kanjiWriting"
+        );
 
     const writingBtn =
         document.getElementById(
@@ -2046,7 +2098,7 @@ function startGrade2Kokugo() {
     if (writingBtn) {
 
         writingBtn.style.display =
-            isGrade2 ? "inline-block" : "none";
+            hasKanjiWriting ? "inline-block" : "none";
 
     }
 
@@ -2058,7 +2110,7 @@ function startGrade2Kokugo() {
     if (mixedBtn) {
 
         mixedBtn.style.display =
-            isGrade2 ? "inline-block" : "none";
+            hasKanjiWriting ? "inline-block" : "none";
 
     }
 
@@ -2144,6 +2196,9 @@ currentKokugoQuiz =
     shuffleArray(
         [...kanjiReadingQuestions]
     ).slice(0, 10);
+
+kokugoOriginalQuizLength =
+    currentKokugoQuiz.length;
 
 console.log(
     "🌸 漢字の読み10問シャッフル完了:",
@@ -2239,7 +2294,7 @@ console.log(
 }
 
 /////////////////////////////////////////////////////
-// 🌸 小学2年 国語
+// 🌸 国語（全学年）
 // 🌸 漢字の書きコース開始
 /////////////////////////////////////////////////////
 
@@ -2250,33 +2305,24 @@ function startKokugoWriting() {
     );
 
     // =========================================
-    // 🌸 バグ修正：正確な書き順データが今のところ
-    // 小学2年の漢字にしかないため、他学年では
-    // このコースを開始しない（ボタン自体も非表示にする）
+    // 🌸 バグ修正：全学年対応
+    // 書き順データを KanjiVG から自動生成して拡充したため、
+    // 学年ごとのデータから「漢字の書き」だけ取得する
+    // （以前は小学2年のデータに固定されていた）
     // =========================================
 
-    if (!currentUser || currentUser.grade !== "grade2") {
-
-        console.log(
-            "🌸 漢字の書きコースは現在、小学2年のみ対応しています"
-        );
-
+    if (!currentUser) {
         return;
     }
 
-    // =========================================
-    // 🌸 小学2年・漢字の書きだけ取得
-    // =========================================
-
     const kanjiWritingQuestions =
-        grade2KokugoQuestions.filter(
+        getKokugoDatabase().filter(
             question =>
-                question.type === "kanjiWriting" &&
-                question.unit === "漢字の書き（2年生）"
+                question.type === "kanjiWriting"
         );
 
     console.log(
-        "🌸 小学2年・漢字の書き問題数:",
+        "🌸 漢字の書き問題数:",
         kanjiWritingQuestions.length
     );
 
@@ -2304,6 +2350,9 @@ currentKokugoQuiz =
     shuffleArray(
         [...kanjiWritingQuestions]
     ).slice(0, 10);
+
+kokugoOriginalQuizLength =
+    currentKokugoQuiz.length;
 
 console.log(
     "🌸 漢字の書き10問シャッフル完了:",
@@ -2406,7 +2455,7 @@ console.log(
 }
 
 /////////////////////////////////////////////////////
-// 🌸 小学2年 国語
+// 🌸 国語（全学年）
 // 🌸 漢字の読み・書きミックスコース開始
 /////////////////////////////////////////////////////
 
@@ -2417,39 +2466,26 @@ function startKokugoMixed() {
     );
 
     // =========================================
-    // 🌸 バグ修正：漢字の書きデータが小学2年にしかないため
-    // ミックスコースも小学2年のみ対応（ボタン自体も非表示）
+    // 🌸 バグ修正：全学年対応
+    // 書き順データを KanjiVG から自動生成して拡充したため、
+    // 学年ごとのデータから読み・書きを取得する
+    // （以前は小学2年のデータに固定されていた）
     // =========================================
 
-    if (!currentUser || currentUser.grade !== "grade2") {
-
-        console.log(
-            "🌸 読み・書きミックスコースは現在、小学2年のみ対応しています"
-        );
-
+    if (!currentUser) {
         return;
     }
 
-    // =========================================
-    // 🌸 漢字の読み50問を取得
-    // =========================================
-
     const kanjiReadingQuestions =
-        grade2KokugoQuestions.filter(
+        getKokugoDatabase().filter(
             question =>
-                question.type === "kanjiReading" &&
-                question.unit === "漢字の読み（2年生）"
+                question.type === "kanjiReading"
         );
 
-    // =========================================
-    // 🌸 漢字の書き35問を取得
-    // =========================================
-
     const kanjiWritingQuestions =
-        grade2KokugoQuestions.filter(
+        getKokugoDatabase().filter(
             question =>
-                question.type === "kanjiWriting" &&
-                question.unit === "漢字の書き（2年生）"
+                question.type === "kanjiWriting"
         );
 
     console.log(
@@ -2499,6 +2535,9 @@ function startKokugoMixed() {
         shuffleArray(
             [...mixedQuestions]
         ).slice(0, 10);
+
+    kokugoOriginalQuizLength =
+        currentKokugoQuiz.length;
 
     console.log(
         "🌸 読み・書きミックス10問シャッフル完了:",
@@ -2631,8 +2670,22 @@ function showKokugoQuestion() {
     );
 
     // 🌸 問題文（問題番号は水色で本文とはっきり離す）
+    // 🌸 バグ修正：なぞり書きの間違いをドリルの最後にもう一度
+    // 🌸 出題する仕様のため、currentKokugoQuiz.length や
+    // 🌸 kokugoIndex をそのまま使うと「第13問／13」のように
+    // 🌸 表示が増えてしまう。もう一度出題された問題は
+    // 🌸 もとの問題番号（_kokugoOriginalNumber）を、
+    // 🌸 分母はもともとの問題数（kokugoOriginalQuizLength）を使う
+    const kokugoDisplayNumber =
+        currentKokugoQuestion._kokugoOriginalNumber ||
+        (kokugoIndex + 1);
+
+    const kokugoDisplayTotal =
+        kokugoOriginalQuizLength ||
+        currentKokugoQuiz.length;
+
     questionText.innerHTML =
-        `<div class="questionCounter">第${kokugoIndex + 1}問 / ${currentKokugoQuiz.length}</div>` +
+        `<div class="questionCounter">第${kokugoDisplayNumber}問 / ${kokugoDisplayTotal}</div>` +
         `<div class="questionBody">${currentKokugoQuestion.q}</div>`;
 
     // =================================================
@@ -2729,7 +2782,7 @@ function showKokugoQuestion() {
         answerInput.style.display =
             "none";
 
-        createKokugoWritingBoard(
+        beginKokugoWritingBoard(
             String(
                 currentKokugoQuestion.a
             )
@@ -3397,7 +3450,15 @@ function showKokugoResult() {
         wrongList.filter(
             item =>
                 item.type === "kanjiReading" ||
-                item.type === "kanjiWriting"
+                item.type === "kanjiWriting" ||
+                item.type === "antonym" ||
+                item.type === "classic" ||
+                item.type === "grammar" ||
+                item.type === "honorific" ||
+                item.type === "literature" ||
+                item.type === "proverb" ||
+                item.type === "reading" ||
+                item.type === "vocabulary"
         );
 
 
@@ -3483,6 +3544,1162 @@ function showKokugoResult() {
         "🌸 国語結果画面表示完了"
     );
 
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き
+// 🌸 答えの文字列（熟語・送り仮名つきの言葉もある）から
+// 🌸 実際に書き順練習させる「漢字だけ」を順番に取り出す
+// 例：「食べる」→ ["食"]　「経緯」→ ["経","緯"]
+/////////////////////////////////////////////////////
+
+function extractKokugoWritingChars(answerStr) {
+
+    const chars =
+        String(answerStr).match(
+            /[㐀-鿿]/g
+        );
+
+    if (!chars || chars.length === 0) {
+
+        // 🌸 漢字が1文字も見つからない場合の保険
+        return [String(answerStr)];
+    }
+
+    return chars;
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き
+// 🌸 1問（熟語なら複数の漢字）ぶんの出題を初期化する入り口
+// 🌸 createKokugoWritingBoard() は「1文字ぶん」の描画だけを行う
+/////////////////////////////////////////////////////
+
+function beginKokugoWritingBoard(answerStr) {
+
+    kokugoWritingChars =
+        extractKokugoWritingChars(answerStr);
+
+    kokugoWritingCharIndex = 0;
+
+    console.log(
+        "🌸 漢字書き出題開始:",
+        answerStr,
+        "→",
+        kokugoWritingChars
+    );
+
+    // =========================================
+    // 🌸 小1・小2は「升目になぞって書く」方式、
+    // 🌸 それ以外は今までどおり「画をタップして並べる」方式
+    // =========================================
+
+    if (isKokugoWritingTraceGrade()) {
+
+        kokugoTraceMode = true;
+        kokugoTraceWordHadMistake = false;
+        kokugoTraceWordHadOrderMistake = false;
+
+        renderKokugoWritingTraceChar();
+
+    } else {
+
+        kokugoTraceMode = false;
+
+        showKokugoWritingClickUI();
+
+        createKokugoWritingBoard(
+            kokugoWritingChars[kokugoWritingCharIndex]
+        );
+    }
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き
+// 🌸 小1・小2 かどうかの判定
+// （なぞる方式にするのはこの2学年だけ。他学年は
+// 　従来どおり「画をタップして並べる」方式のまま）
+/////////////////////////////////////////////////////
+
+function isKokugoWritingTraceGrade() {
+
+    return (
+        currentUser &&
+        (
+            currentUser.grade === "grade1" ||
+            currentUser.grade === "grade2"
+        )
+    );
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き
+// 🌸 熟語のとき「今どの字を書いているか」表示を更新
+// 🌸 なぞる方式・タップ方式の両方から呼ばれる共通処理
+/////////////////////////////////////////////////////
+
+function renderKokugoWritingWordProgress() {
+
+    const wordProgress =
+        document.getElementById(
+            "kokugoWritingWordProgress"
+        );
+
+    if (!wordProgress) {
+        return;
+    }
+
+    if (
+        kokugoWritingChars &&
+        kokugoWritingChars.length > 1
+    ) {
+
+        wordProgress.innerHTML =
+            kokugoWritingChars
+                .map(
+                    (c, i) => {
+
+                        if (i < kokugoWritingCharIndex) {
+                            return `<span class="kokugoWritingWordChar kokugoWritingWordCharDone">${c}✅</span>`;
+                        }
+
+                        if (i === kokugoWritingCharIndex) {
+                            return `<span class="kokugoWritingWordChar kokugoWritingWordCharActive">${c}</span>`;
+                        }
+
+                        return `<span class="kokugoWritingWordChar kokugoWritingWordCharTodo">${c}</span>`;
+                    }
+                )
+                .join("　");
+
+        wordProgress.style.display = "block";
+
+    } else {
+
+        wordProgress.innerHTML = "";
+
+        wordProgress.style.display = "none";
+    }
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（画をタップして並べる方式）
+// 🌸 表示切り替え：タップ方式のUIを表示、なぞる方式のUIを隠す
+/////////////////////////////////////////////////////
+
+function showKokugoWritingClickUI() {
+
+    const traceArea =
+        document.getElementById(
+            "kokugoWritingTraceArea"
+        );
+
+    if (traceArea) {
+        traceArea.style.display = "none";
+    }
+
+    const traceBoardEl =
+        document.getElementById("kokugoWritingBoard");
+
+    if (traceBoardEl) {
+        traceBoardEl.classList.remove(
+            "kokugoWritingBoardTraceMode"
+        );
+    }
+
+    const target =
+        document.getElementById(
+            "kokugoWritingTarget"
+        );
+
+    if (target) {
+        target.style.display = "";
+    }
+
+    const parts =
+        document.getElementById(
+            "kokugoWritingParts"
+        );
+
+    if (parts) {
+        parts.style.display = "";
+    }
+
+    const answerBoard =
+        document.getElementById(
+            "kokugoWritingAnswerBoard"
+        );
+
+    if (answerBoard) {
+        answerBoard.style.display = "";
+    }
+
+    const submitBtn =
+        document.getElementById(
+            "kokugoWritingSubmitBtn"
+        );
+
+    if (submitBtn) {
+        submitBtn.style.display = "";
+    }
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（小1・小2 なぞる方式）
+// 🌸 「とめ・はね・はらい」の分類と、やさしいヒント
+//
+// 🌸 KanjiVG の kvg:type は Unicode の「CJK Strokes」ブロック
+// 🌸 （U+31C0〜31E5）の文字で、その正式名（H=横,S=縦,P=撇/はらい,
+// 🌸 N=捺/はらい,D=点,T=提,Z=折,W=弯,G=鉤/はね…）の最後の文字が
+// 🌸 その画の「終わり方」を表す。これをもとに分類している。
+/////////////////////////////////////////////////////
+
+const KOKUGO_STROKE_TERMINATION_MAP = {
+
+    "㇀": "hane",   // T   （提＝はね上げ）
+    "㇁": "hane",   // WG
+    "㇂": "hane",   // XG
+    "㇃": "hane",   // BXG
+    "㇄": "tome",   // SW
+    "㇅": "tome",   // HZZ
+    "㇆": "hane",   // HZG
+    "㇇": "harai",  // HP
+    "㇈": "hane",   // HZWG
+    "㇉": "hane",   // SZWG
+    "㇊": "hane",   // HZT
+    "㇋": "harai",  // HZZP
+    "㇌": "hane",   // HPWG
+    "㇍": "tome",   // HZW
+    "㇎": "tome",   // HZZZ
+    "㇏": "harai",  // N  （捺）
+    "㇐": "tome",   // H
+    "㇑": "tome",   // S
+    "㇒": "harai",  // P  （撇）
+    "㇓": "harai",  // SP
+    "㇔": "tome",   // D
+    "㇕": "tome",   // HZ
+    "㇖": "hane",   // HG
+    "㇗": "tome",   // SZ
+    "㇘": "tome",   // SWZ
+    "㇙": "hane",   // ST
+    "㇚": "hane",   // SG
+    "㇛": "tome",   // PD
+    "㇜": "tome",   // PZ
+    "㇝": "harai",  // TN
+    "㇞": "tome",   // SZZ
+    "㇟": "hane",   // SWG
+    "㇠": "hane",   // HXWG
+    "㇡": "hane",   // HZZZG
+    "㇢": "hane",   // PG
+    "㇣": "tome",   // Q
+    "㇤": "hane",   // HXG
+    "㇥": "harai"   // SZP
+
+};
+
+const KOKUGO_STROKE_TIPS = {
+
+    tome: [
+        "ピタッと とめてね！",
+        "さいごまで しっかりとめよう",
+        "ここで きちんと とまるよ"
+    ],
+
+    hane: [
+        "さいごに キュッと はねてね！",
+        "ピョンと はねる感じで！",
+        "はねるところは 元気よく！"
+    ],
+
+    harai: [
+        "さいごは スーッと はらおう",
+        "すべらせるように はらってね",
+        "ふでを ふわっと はなそう"
+    ]
+
+};
+
+const KOKUGO_STROKE_TERMINATION_LABEL = {
+    tome: "とめ",
+    hane: "はね",
+    harai: "はらい"
+};
+
+function classifyKokugoStrokeTermination(kvgType) {
+
+    if (!kvgType) {
+        return "tome";
+    }
+
+    const base =
+        String(kvgType).charAt(0);
+
+    return (
+        KOKUGO_STROKE_TERMINATION_MAP[base] ||
+        "tome"
+    );
+}
+
+function pickKokugoStrokeTip(termination, kvgType) {
+
+    // 🌸 ふつうの横画（右上がりに書く）のときは
+    // 🌸 ときどき特別なヒントも混ぜる
+    if (
+        kvgType &&
+        String(kvgType).charAt(0) === "㇐" &&
+        Math.random() < 0.5
+    ) {
+        return "右上がりに 書こう！";
+    }
+
+    const tips =
+        KOKUGO_STROKE_TIPS[termination] ||
+        KOKUGO_STROKE_TIPS.tome;
+
+    return tips[
+        Math.floor(Math.random() * tips.length)
+    ];
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（小1・小2 なぞる方式）
+// 🌸 1つの漢字の描画を初期化する
+// 🌸 ①お手本を自動で書いて見せる（赤い文字）
+// 🌸 ②数秒後、うすい文字（ガイド）を残す
+// 🌸 ③1画ずつなぞらせる（書き順は問わない。指を離すたびに
+// 🌸 　1画とみなし、間違っていても止めずに最後まで書かせる）
+// 🌸 ④全画書き終わったらまとめて採点し、
+// 🌸 　合っていた画＝緑／間違っていた画＝赤 で表示する
+/////////////////////////////////////////////////////
+
+function renderKokugoWritingTraceChar() {
+
+    // 🌸 前の文字・前の問題の「次へ」予約タイマーを取り消す
+    if (kokugoTraceAdvanceTimeoutId) {
+
+        clearTimeout(kokugoTraceAdvanceTimeoutId);
+
+        kokugoTraceAdvanceTimeoutId = null;
+    }
+
+    if (kokugoTraceRetryTimeoutId) {
+
+        clearTimeout(kokugoTraceRetryTimeoutId);
+
+        kokugoTraceRetryTimeoutId = null;
+    }
+
+    kokugoTraceDemoTimeoutIds.forEach(id => clearTimeout(id));
+    kokugoTraceDemoTimeoutIds = [];
+
+    kokugoTraceStrokeIndex = 0;
+    kokugoTraceInputEnabled = false;
+    kokugoTraceGuidePathEls = [];
+
+    const kanji =
+        kokugoWritingChars[kokugoWritingCharIndex];
+
+    const data =
+        kokugoKanjiWritingData[kanji];
+
+    if (!data) {
+
+        // 🌸 データがない場合の保険：タップ方式にフォールバック
+        console.log(
+            "🌸 漢字書きデータなし（なぞる方式→タップ方式に切替）:",
+            kanji
+        );
+
+        kokugoTraceMode = false;
+
+        showKokugoWritingClickUI();
+
+        createKokugoWritingBoard(kanji);
+
+        return;
+    }
+
+    kokugoTraceRemainingIndices =
+        data.strokes.map((_, i) => i);
+
+    kokugoTraceStrokeOutcomes =
+        new Array(data.strokeCount).fill(null);
+
+    kokugoTraceClaimOrder = [];
+
+    kokugoTraceBuildBoard(kanji, data);
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（なぞる方式）
+// 🌸 ボードの土台（十字線・バッジ・ヒント表示欄・
+// 🌸 なぞり操作を受け取る透明な板）を作る
+/////////////////////////////////////////////////////
+
+function kokugoTraceBuildBoard(kanji, data) {
+
+    const board =
+        document.getElementById("kokugoWritingBoard");
+
+    const traceArea =
+        document.getElementById("kokugoWritingTraceArea");
+
+    const svg =
+        document.getElementById("kokugoWritingTraceSvg");
+
+    const badge =
+        document.getElementById("kokugoWritingTraceBadge");
+
+    const tipEl =
+        document.getElementById("kokugoWritingTraceTip");
+
+    if (!board || !traceArea || !svg || !badge || !tipEl) {
+
+        console.log(
+            "🌸 なぞるボードHTMLが見つかりません"
+        );
+
+        return;
+    }
+
+    // =================================================
+    // 🌸 表示切り替え：なぞる方式のUIを表示、タップ方式は隠す
+    // 🌸 （升目が画面中央にそろうよう専用クラスを付ける）
+    // =================================================
+
+    board.classList.add("kokugoWritingBoardTraceMode");
+
+    traceArea.style.display = "flex";
+
+    board.style.display = "flex";
+
+    const oldTarget =
+        document.getElementById("kokugoWritingTarget");
+    if (oldTarget) oldTarget.style.display = "none";
+
+    const oldParts =
+        document.getElementById("kokugoWritingParts");
+    if (oldParts) oldParts.style.display = "none";
+
+    const oldAnswerBoard =
+        document.getElementById("kokugoWritingAnswerBoard");
+    if (oldAnswerBoard) oldAnswerBoard.style.display = "none";
+
+    const submitBtn =
+        document.getElementById("kokugoWritingSubmitBtn");
+    if (submitBtn) submitBtn.style.display = "none";
+
+    moveFeedbackTo("kokugoWritingFeedbackSlot");
+
+    renderKokugoWritingWordProgress();
+
+    // =================================================
+    // 🌸 SVGを作り直す
+    // =================================================
+
+    svg.innerHTML = "";
+
+    kokugoTracePoints = [];
+    kokugoTraceDrawing = false;
+    kokugoTracePointerId = null;
+    kokugoTraceInkEl = null;
+
+    // 🌸 十字の補助線（マス目の目印）
+    const cross =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "g"
+        );
+
+    cross.setAttribute("stroke", "#e6d9c8");
+    cross.setAttribute("stroke-width", "1");
+    cross.setAttribute("stroke-dasharray", "4,3");
+
+    cross.innerHTML =
+        '<line x1="50" y1="2" x2="50" y2="98"></line>' +
+        '<line x1="2" y1="50" x2="98" y2="50"></line>';
+
+    svg.appendChild(cross);
+
+    badge.textContent = "おてほん";
+    badge.className = "kokugoTraceBadge-tome";
+
+    tipEl.textContent = "よく見ていてね！";
+
+    // 🌸 なぞる操作を受け取る透明な板（お手本の間は反応しない）
+    const captureRect =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "rect"
+        );
+
+    captureRect.setAttribute("x", "0");
+    captureRect.setAttribute("y", "0");
+    captureRect.setAttribute("width", "100");
+    captureRect.setAttribute("height", "100");
+    captureRect.setAttribute("fill", "transparent");
+    captureRect.style.cursor = "pointer";
+
+    captureRect.addEventListener(
+        "pointerdown",
+        kokugoTracePointerDown
+    );
+    captureRect.addEventListener(
+        "pointermove",
+        kokugoTracePointerMove
+    );
+    captureRect.addEventListener(
+        "pointerup",
+        kokugoTracePointerUp
+    );
+    captureRect.addEventListener(
+        "pointercancel",
+        kokugoTracePointerUp
+    );
+
+    svg.appendChild(captureRect);
+
+    kokugoTracePlayDemo(kanji, data, svg);
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（なぞる方式）
+// 🌸 ①お手本を1画ずつ、とめ・はね・はらいの色で
+// 🌸 自動で書いて見せる（アニメーション）
+/////////////////////////////////////////////////////
+
+function kokugoTracePlayDemo(kanji, data, svg) {
+
+    kokugoTraceInputEnabled = false;
+
+    const badge =
+        document.getElementById("kokugoWritingTraceBadge");
+
+    const tipEl =
+        document.getElementById("kokugoWritingTraceTip");
+
+    let delay = 500;
+
+    data.strokes.forEach((stroke, i) => {
+
+        const term =
+            classifyKokugoStrokeTermination(stroke.type);
+
+        const demoPath =
+            document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "path"
+            );
+
+        demoPath.setAttribute("d", stroke.d);
+        demoPath.setAttribute("fill", "none");
+        demoPath.setAttribute(
+            "stroke",
+            term === "hane"
+                ? "#e53935"
+                : term === "harai"
+                    ? "#fb8c00"
+                    : "#333333"
+        );
+        demoPath.setAttribute("stroke-width", "5");
+        demoPath.setAttribute("stroke-linecap", "round");
+        demoPath.setAttribute("stroke-linejoin", "round");
+
+        svg.appendChild(demoPath);
+
+        kokugoTraceGuidePathEls[i] = demoPath;
+
+        // 🌸 最初は見えない状態にしておき、自分の番が来たら
+        // 🌸 ゆっくり線を描くように見せていく
+        const len = demoPath.getTotalLength();
+
+        demoPath.style.strokeDasharray = len;
+        demoPath.style.strokeDashoffset = len;
+
+        // 🌸 ゆっくりめの速さ（急ぎすぎると見えないため）
+        const dur =
+            Math.max(550, Math.min(1000, len * 11));
+
+        const startAt = delay;
+
+        const id = setTimeout(() => {
+
+            // 🌸 とめ・はね・はらいを「色」だけでなく
+            // 🌸 「ことば」でも見せる
+            if (badge) {
+
+                badge.textContent =
+                    KOKUGO_STROKE_TERMINATION_LABEL[term];
+
+                badge.className =
+                    "kokugoTraceBadge-" + term;
+            }
+
+            if (tipEl) {
+
+                tipEl.textContent =
+                    pickKokugoStrokeTip(term, stroke.type);
+            }
+
+            demoPath.style.transition =
+                "stroke-dashoffset " + dur + "ms linear";
+
+            demoPath.style.strokeDashoffset = "0";
+
+        }, startAt);
+
+        kokugoTraceDemoTimeoutIds.push(id);
+
+        delay = startAt + dur + 350;
+    });
+
+    const finishId = setTimeout(() => {
+
+        kokugoTraceShowGuideAndEnableInput(kanji, data, svg);
+
+    }, delay + 1200);
+
+    kokugoTraceDemoTimeoutIds.push(finishId);
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（なぞる方式）
+// 🌸 ②お手本の色を消し、うすい文字（ガイド）を残す
+// 🌸 ③なぞる操作を受け付け始める
+/////////////////////////////////////////////////////
+
+function kokugoTraceShowGuideAndEnableInput(kanji, data, svg) {
+
+    kokugoTraceGuidePathEls.forEach(path => {
+
+        if (!path) return;
+
+        path.style.transition = "";
+        path.style.strokeDasharray = "";
+        path.style.strokeDashoffset = "";
+
+        path.setAttribute("stroke", "#d8cdbb");
+        path.setAttribute("stroke-width", "9");
+    });
+
+    // 🌸 なぞっている途中の線（自分の指・マウスの線）
+    const inkPath =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path"
+        );
+
+    inkPath.setAttribute("d", "");
+    inkPath.setAttribute("fill", "none");
+    inkPath.setAttribute("stroke", "#1976d2");
+    inkPath.setAttribute("stroke-width", "6");
+    inkPath.setAttribute("stroke-linecap", "round");
+    inkPath.setAttribute("stroke-linejoin", "round");
+
+    svg.appendChild(inkPath);
+
+    kokugoTraceInkEl = inkPath;
+
+    // 🌸 透明な板を一番上（操作を受け取れる位置）に移動する
+    const captureRect = svg.querySelector("rect");
+
+    if (captureRect) {
+        svg.appendChild(captureRect);
+    }
+
+    const badge =
+        document.getElementById("kokugoWritingTraceBadge");
+
+    const tipEl =
+        document.getElementById("kokugoWritingTraceTip");
+
+    if (badge) {
+
+        badge.textContent =
+            "0 / " + data.strokeCount + " 画";
+
+        badge.className = "kokugoTraceBadge-tome";
+    }
+
+    if (tipEl) {
+        tipEl.textContent = "うすい文字をなぞってみよう！";
+    }
+
+    kokugoTraceInputEnabled = true;
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（なぞる方式）
+// 🌸 座標変換：画面上の指の位置 → SVG内部の座標(0〜100)
+/////////////////////////////////////////////////////
+
+function kokugoTraceToSvgPoint(svg, clientX, clientY) {
+
+    const pt = svg.createSVGPoint();
+
+    pt.x = clientX;
+    pt.y = clientY;
+
+    const ctm = svg.getScreenCTM();
+
+    if (!ctm) {
+        return { x: 0, y: 0 };
+    }
+
+    const svgP =
+        pt.matrixTransform(ctm.inverse());
+
+    return { x: svgP.x, y: svgP.y };
+}
+
+function kokugoTraceUpdateInkPath() {
+
+    if (!kokugoTraceInkEl || kokugoTracePoints.length === 0) {
+        return;
+    }
+
+    let d =
+        "M " +
+        kokugoTracePoints[0].x.toFixed(2) +
+        " " +
+        kokugoTracePoints[0].y.toFixed(2);
+
+    for (let i = 1; i < kokugoTracePoints.length; i++) {
+
+        d +=
+            " L " +
+            kokugoTracePoints[i].x.toFixed(2) +
+            " " +
+            kokugoTracePoints[i].y.toFixed(2);
+    }
+
+    kokugoTraceInkEl.setAttribute("d", d);
+}
+
+function kokugoTracePointerDown(evt) {
+
+    // 🌸 お手本アニメーションの再生中はなぞらせない
+    if (!kokugoTraceInputEnabled) {
+        return;
+    }
+
+    evt.preventDefault();
+
+    const svg =
+        document.getElementById("kokugoWritingTraceSvg");
+
+    if (!svg) return;
+
+    kokugoTraceDrawing = true;
+
+    kokugoTracePointerId = evt.pointerId;
+
+    try {
+        evt.target.setPointerCapture(evt.pointerId);
+    } catch (e) {}
+
+    kokugoTracePoints = [
+        kokugoTraceToSvgPoint(svg, evt.clientX, evt.clientY)
+    ];
+
+    kokugoTraceUpdateInkPath();
+}
+
+function kokugoTracePointerMove(evt) {
+
+    if (!kokugoTraceDrawing) {
+        return;
+    }
+
+    if (
+        kokugoTracePointerId !== null &&
+        evt.pointerId !== kokugoTracePointerId
+    ) {
+        return;
+    }
+
+    evt.preventDefault();
+
+    const svg =
+        document.getElementById("kokugoWritingTraceSvg");
+
+    if (!svg) return;
+
+    kokugoTracePoints.push(
+        kokugoTraceToSvgPoint(svg, evt.clientX, evt.clientY)
+    );
+
+    kokugoTraceUpdateInkPath();
+}
+
+function kokugoTracePointerUp(evt) {
+
+    if (!kokugoTraceDrawing) {
+        return;
+    }
+
+    if (
+        kokugoTracePointerId !== null &&
+        evt.pointerId !== kokugoTracePointerId
+    ) {
+        return;
+    }
+
+    kokugoTraceDrawing = false;
+
+    kokugoScoreTraceAttempt();
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（小1・小2 なぞる方式）
+// 🌸 なぞった線を、お手本の画と比べる（形の近さの計算）
+/////////////////////////////////////////////////////
+
+function kokugoDist(a, b) {
+
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+// 🌸 点 p から、折れ線 poly までの最短距離
+function kokugoPointToPolylineDist(p, poly) {
+
+    if (poly.length === 1) {
+        return kokugoDist(p, poly[0]);
+    }
+
+    let best = Infinity;
+
+    for (let i = 0; i < poly.length - 1; i++) {
+
+        const a = poly[i];
+        const b = poly[i + 1];
+
+        const abx = b.x - a.x;
+        const aby = b.y - a.y;
+
+        const lenSq = abx * abx + aby * aby;
+
+        let t =
+            lenSq > 0
+                ? ((p.x - a.x) * abx + (p.y - a.y) * aby) / lenSq
+                : 0;
+
+        t = Math.max(0, Math.min(1, t));
+
+        const projX = a.x + abx * t;
+        const projY = a.y + aby * t;
+
+        const d = kokugoDist(p, { x: projX, y: projY });
+
+        if (d < best) best = d;
+    }
+
+    return best;
+}
+
+function kokugoPolylineLength(poly) {
+
+    let len = 0;
+
+    for (let i = 1; i < poly.length; i++) {
+        len += kokugoDist(poly[i - 1], poly[i]);
+    }
+
+    return len;
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（なぞる方式）
+// 🌸 1画書き終わるたびに呼ばれる。
+// 🌸 「まだなぞっていない画」の中から一番近い画を選んで
+// 🌸 1画ぶんとみなす（書き順は問わない）。
+// 🌸 合っているかどうかは、まだ表示に反映しない
+// 🌸 （最後にまとめて採点して色を付ける）。
+/////////////////////////////////////////////////////
+
+function kokugoScoreTraceAttempt() {
+
+    const kanji =
+        kokugoWritingChars[kokugoWritingCharIndex];
+
+    const data =
+        kokugoKanjiWritingData[kanji];
+
+    if (!data || kokugoTraceRemainingIndices.length === 0) {
+        return;
+    }
+
+    // 🌸 一瞬タップしただけ（線になっていない）は
+    // 🌸 1画分として数えず、そのまま消して続けさせる
+    if (kokugoTracePoints.length < 2) {
+
+        kokugoTracePoints = [];
+
+        if (kokugoTraceInkEl) {
+            kokugoTraceInkEl.setAttribute("d", "");
+        }
+
+        return;
+    }
+
+    const userLen =
+        kokugoPolylineLength(kokugoTracePoints);
+
+    const userStart = kokugoTracePoints[0];
+    const userEnd =
+        kokugoTracePoints[kokugoTracePoints.length - 1];
+
+    // 🌸 まだなぞっていない画の中から、形が一番近い画を選ぶ
+    let bestIdx = kokugoTraceRemainingIndices[0];
+    let bestMetrics = null;
+    let bestScore = Infinity;
+
+    kokugoTraceRemainingIndices.forEach(idx => {
+
+        const refPathEl = kokugoTraceGuidePathEls[idx];
+
+        if (!refPathEl) return;
+
+        const refLen = refPathEl.getTotalLength();
+
+        const sampleCount = 30;
+
+        const refSamples = [];
+
+        for (let i = 0; i <= sampleCount; i++) {
+
+            const len = (refLen * i) / sampleCount;
+
+            const pt = refPathEl.getPointAtLength(len);
+
+            refSamples.push({ x: pt.x, y: pt.y });
+        }
+
+        let totalDist = 0;
+        let maxDist = 0;
+
+        refSamples.forEach(rp => {
+
+            const d =
+                kokugoPointToPolylineDist(
+                    rp,
+                    kokugoTracePoints
+                );
+
+            totalDist += d;
+
+            if (d > maxDist) maxDist = d;
+        });
+
+        const avgDist = totalDist / refSamples.length;
+
+        const refStart = refSamples[0];
+        const refEnd = refSamples[refSamples.length - 1];
+
+        const startDist = kokugoDist(refStart, userStart);
+        const endDist = kokugoDist(refEnd, userEnd);
+
+        const lenRatio =
+            refLen > 0 ? userLen / refLen : 1;
+
+        // 🌸 「近さ」を1つの数値にまとめて、候補を比べる
+        const closeness =
+            avgDist + startDist * 0.4 + endDist * 0.4;
+
+        if (closeness < bestScore) {
+
+            bestScore = closeness;
+            bestIdx = idx;
+
+            bestMetrics = {
+                avgDist, maxDist, startDist, endDist, lenRatio
+            };
+        }
+    });
+
+    const passed =
+        !!bestMetrics &&
+        bestMetrics.avgDist <= 14 &&
+        bestMetrics.maxDist <= 26 &&
+        bestMetrics.startDist <= 28 &&
+        bestMetrics.endDist <= 28 &&
+        bestMetrics.lenRatio >= 0.35 &&
+        bestMetrics.lenRatio <= 3.2;
+
+    console.log(
+        "🌸 なぞり採点:",
+        kanji,
+        "→画番号", bestIdx,
+        bestMetrics
+            ? (
+                "avgDist=" + bestMetrics.avgDist.toFixed(1) +
+                " maxDist=" + bestMetrics.maxDist.toFixed(1) +
+                " startDist=" + bestMetrics.startDist.toFixed(1) +
+                " endDist=" + bestMetrics.endDist.toFixed(1) +
+                " lenRatio=" + bestMetrics.lenRatio.toFixed(2)
+            )
+            : "(比較不可)",
+        "→",
+        passed ? "OK（採点は最後に表示）" : "△（採点は最後に表示）"
+    );
+
+    kokugoTraceStrokeOutcomes[bestIdx] = passed;
+
+    // 🌸 書き順チェック用：お手本の正しい順番（0,1,2...）と
+    // 🌸 比べられるよう、なぞり終えた順に画番号を記録しておく
+    kokugoTraceClaimOrder.push(bestIdx);
+
+    kokugoTraceRemainingIndices =
+        kokugoTraceRemainingIndices.filter(i => i !== bestIdx);
+
+    kokugoTraceStrokeIndex++;
+
+    // 🌸 なぞり終えた画は「書けた」ことが分かるようグレーにする
+    // 🌸 （合っている／間違っているの色は、まだ付けない）
+    const claimedPathEl = kokugoTraceGuidePathEls[bestIdx];
+
+    if (claimedPathEl) {
+
+        claimedPathEl.setAttribute("stroke", "#9e9e9e");
+        claimedPathEl.setAttribute("stroke-width", "6");
+    }
+
+    if (kokugoTraceInkEl) {
+        kokugoTraceInkEl.setAttribute("d", "");
+    }
+
+    kokugoTracePoints = [];
+
+    playSound("correct");
+
+    // 🌸 なぞった画が「とめ・はね・はらい」のどれだったかを
+    // 🌸 進み具合と一緒に、ことばでも見せる
+    const claimedTerm =
+        classifyKokugoStrokeTermination(
+            data.strokes[bestIdx].type
+        );
+
+    const badge =
+        document.getElementById("kokugoWritingTraceBadge");
+
+    if (badge) {
+
+        badge.textContent =
+            KOKUGO_STROKE_TERMINATION_LABEL[claimedTerm] +
+            "（" + kokugoTraceStrokeIndex + " / " +
+            data.strokeCount + " 画）";
+
+        badge.className =
+            "kokugoTraceBadge-" + claimedTerm;
+    }
+
+    if (kokugoTraceRemainingIndices.length === 0) {
+
+        kokugoTraceFinishCharacter(kanji, data);
+    }
+}
+
+/////////////////////////////////////////////////////
+// 🌸 国語・漢字書き（なぞる方式）
+// 🌸 ④1文字ぶん全画なぞり終えたら、まとめて採点する。
+// 🌸 合っていた画＝緑／間違っていた画＝赤 に色を付け、
+// 🌸 熟語ならまだ文字が残っていれば次の文字へ、
+// 🌸 最後の文字ならこたえるを自動で確定する。
+/////////////////////////////////////////////////////
+
+function kokugoTraceFinishCharacter(kanji, data) {
+
+    kokugoTraceInputEnabled = false;
+
+    let allPassed = true;
+
+    kokugoTraceStrokeOutcomes.forEach((passed, idx) => {
+
+        const pathEl = kokugoTraceGuidePathEls[idx];
+
+        if (!pathEl) return;
+
+        if (!passed) allPassed = false;
+
+        // 🌸 自分が書いた線ではなく、きれいなお手本の形で
+        // 🌸 固定表示する（見やすさのため）
+        pathEl.setAttribute("d", data.strokes[idx].d);
+        pathEl.setAttribute(
+            "stroke",
+            passed ? "#43a047" : "#e53935"
+        );
+        pathEl.setAttribute("stroke-width", "5");
+    });
+
+    if (!allPassed) {
+        kokugoTraceWordHadMistake = true;
+    }
+
+    // 🌸 書き順チェック：形が合っていても、なぞった順番が
+    // 🌸 お手本の正しい順番（0,1,2...）と違っていたら
+    // 🌸 「筆順違い」として、この文字は間違いとして扱う
+    const correctOrder =
+        data.strokes.map((_, i) => i);
+
+    const orderCorrect =
+        kokugoTraceClaimOrder.length === correctOrder.length &&
+        kokugoTraceClaimOrder.every(
+            (idx, i) => idx === correctOrder[i]
+        );
+
+    if (!orderCorrect) {
+        kokugoTraceWordHadOrderMistake = true;
+    }
+
+    const tipEl =
+        document.getElementById("kokugoWritingTraceTip");
+
+    if (tipEl) {
+
+        tipEl.textContent =
+            !allPassed
+                ? "赤いところをもう一度見てみよう"
+                : !orderCorrect
+                    ? "せいかい！でも書き順が違っていました"
+                    : "せいかい！ よく書けたね🌸";
+    }
+
+    playSound(allPassed && orderCorrect ? "correct" : "wrong");
+
+    const hasMoreChars =
+        kokugoWritingChars &&
+        kokugoWritingCharIndex < kokugoWritingChars.length - 1;
+
+    if (hasMoreChars) {
+
+        kokugoTraceAdvanceTimeoutId = setTimeout(
+            () => {
+
+                kokugoTraceAdvanceTimeoutId = null;
+
+                kokugoWritingCharIndex++;
+
+                renderKokugoWritingTraceChar();
+            },
+            1300
+        );
+
+        return;
+    }
+
+    // 🌸 熟語も含めて全部書き終わった → 自動で「こたえる」
+    kokugoTraceAdvanceTimeoutId = setTimeout(
+        () => {
+
+            kokugoTraceAdvanceTimeoutId = null;
+
+            submitKokugoWritingAnswer();
+        },
+        1300
+    );
 }
 
 /////////////////////////////////////////////////////
@@ -3764,6 +4981,64 @@ function createKokugoWritingBoard(kanji) {
         data.strokeCount,
         "画"
     );
+
+    // =================================================
+    // 🌸 熟語（2文字以上）のとき
+    // 🌸 「今どの字を書いているか」を表示する
+    // =================================================
+
+    const wordProgress =
+        document.getElementById(
+            "kokugoWritingWordProgress"
+        );
+
+    if (wordProgress) {
+
+        if (
+            kokugoWritingChars &&
+            kokugoWritingChars.length > 1
+        ) {
+
+            wordProgress.innerHTML =
+                kokugoWritingChars
+                    .map(
+                        (c, i) => {
+
+                            if (
+                                i <
+                                kokugoWritingCharIndex
+                            ) {
+                                // 🌸 書き終わった字
+                                return `<span class="kokugoWritingWordChar kokugoWritingWordCharDone">${c}✅</span>`;
+                            }
+
+                            if (
+                                i ===
+                                kokugoWritingCharIndex
+                            ) {
+                                // 🌸 今書いている字
+                                return `<span class="kokugoWritingWordChar kokugoWritingWordCharActive">${c}</span>`;
+                            }
+
+                            // 🌸 まだの字
+                            return `<span class="kokugoWritingWordChar kokugoWritingWordCharTodo">${c}</span>`;
+                        }
+                    )
+                    .join(
+                        "　"
+                    );
+
+            wordProgress.style.display =
+                "block";
+
+        } else {
+
+            wordProgress.innerHTML = "";
+
+            wordProgress.style.display =
+                "none";
+        }
+    }
 
     // =================================================
     // 🌸 初期化
@@ -4269,7 +5544,7 @@ if (nextButton) {
                     );
 
                     // =================================================
-                    // 🌸 全画完成
+                    // 🌸 全画完成（1文字ぶん）
                     // =================================================
 
                     if (
@@ -4282,6 +5557,37 @@ if (nextButton) {
                             kanji
                         );
 
+                        // =========================================
+                        // 🌸 熟語であと文字が残っている場合は
+                        // 🌸 少し待ってから次の文字のボードへ進む
+                        // =========================================
+
+                        const hasMoreChars =
+                            kokugoWritingChars &&
+                            kokugoWritingCharIndex <
+                                kokugoWritingChars.length - 1;
+
+                        if (hasMoreChars) {
+
+                            setTimeout(
+                                () => {
+
+                                    kokugoWritingCharIndex++;
+
+                                    createKokugoWritingBoard(
+                                        kokugoWritingChars[
+                                            kokugoWritingCharIndex
+                                        ]
+                                    );
+
+                                },
+                                900
+                            );
+
+                            return;
+                        }
+
+                        // 🌸 これが最後の文字なら「こたえる」を有効化
                         const submitBtn =
                             document.querySelector(
                                 '#kokugoWritingBoard button[onclick="submitKokugoWritingAnswer()"]'
@@ -4330,6 +5636,42 @@ if (nextButton) {
 
 function clearKokugoWritingAnswer() {
 
+    // =========================================
+    // 🌸 小1・小2（なぞる方式）は、今なぞっている途中の
+    // 1画の線だけを消す（文字の途中経過は消さない）
+    // =========================================
+
+    if (kokugoTraceMode) {
+
+        kokugoTracePoints = [];
+
+        if (kokugoTraceInkEl) {
+
+            kokugoTraceInkEl.setAttribute("d", "");
+        }
+
+        return;
+    }
+
+    // =========================================
+    // 🌸 バグ修正：熟語（2文字以上）のとき
+    // 「けす」は今書いている途中の1文字だけをやり直す。
+    // kokugoWritingChars が未設定（想定外の呼び出し）のときだけ
+    // 従来どおり答え全体から書き直す。
+    // =========================================
+
+    if (
+        kokugoWritingChars &&
+        kokugoWritingChars.length > 0
+    ) {
+
+        createKokugoWritingBoard(
+            kokugoWritingChars[kokugoWritingCharIndex]
+        );
+
+        return;
+    }
+
     // 🌸 復習モード中は reviewList[reviewIndex] の答えを使う
     if (reviewMode) {
 
@@ -4339,7 +5681,7 @@ function clearKokugoWritingAnswer() {
             return;
         }
 
-        createKokugoWritingBoard(
+        beginKokugoWritingBoard(
             String(currentQuestion.correct)
         );
 
@@ -4352,7 +5694,7 @@ function clearKokugoWritingAnswer() {
 
     // 🌸 ボードを作り直すことで
     // 選択済みの画・お手本表示をまとめて初期状態へ戻す
-    createKokugoWritingBoard(
+    beginKokugoWritingBoard(
         String(currentKokugoQuestion.a)
     );
 }
@@ -4384,9 +5726,27 @@ function submitKokugoWritingAnswer() {
             return;
         }
 
+        // =========================================
+        // 🌸 バグ修正：熟語対応
+        // 最後の文字まで書き終わっているかを
+        // kokugoWritingChars / kokugoWritingCharIndex で確認する
+        // =========================================
+
+        if (
+            !kokugoWritingChars ||
+            kokugoWritingChars.length === 0
+        ) {
+            console.log("🌸 漢字書き回答データ確認エラー（復習）");
+            return;
+        }
+
+        const isLastChar =
+            kokugoWritingCharIndex ===
+            kokugoWritingChars.length - 1;
+
         const data =
             kokugoKanjiWritingData[
-                String(currentQuestion.correct)
+                kokugoWritingChars[kokugoWritingCharIndex]
             ];
 
         if (!data) {
@@ -4394,17 +5754,36 @@ function submitKokugoWritingAnswer() {
             return;
         }
 
-        if (kokugoWritingAnswer.length !== data.strokeCount) {
+        // 🌸 なぞる方式（小1・小2）は画ごとに採点済みのため、
+        // 🌸 最後の文字まで来ているかどうかだけ確認すればよい
+        if (
+            !isLastChar ||
+            (
+                !kokugoTraceMode &&
+                kokugoWritingAnswer.length !== data.strokeCount
+            )
+        ) {
             console.log("🌸 まだ書き順が完成していません");
             return;
         }
 
         kokugoAnswered = true;
-        reviewScore++;
 
-        addPoint(10);
-        showSakura();
-        playSound("correct");
+        // 🌸 なぞる方式で1画でも間違いがあった場合、または
+        // 🌸 画は合っていても書き順が違っていた場合は
+        // 🌸 正解にはしない（赤くなった画が残っているはず）
+        const kokugoTraceHadMistakeReview =
+            kokugoTraceMode &&
+            (
+                kokugoTraceWordHadMistake ||
+                kokugoTraceWordHadOrderMistake
+            );
+
+        // 🌸 画の形はすべて合っていたが、書き順だけが違っていた場合
+        const kokugoTraceOrderOnlyMistakeReview =
+            kokugoTraceMode &&
+            kokugoTraceWordHadOrderMistake &&
+            !kokugoTraceWordHadMistake;
 
         const submitBtnReview = document.querySelector(
             '#kokugoWritingBoard button[onclick="submitKokugoWritingAnswer()"]'
@@ -4413,18 +5792,6 @@ function submitKokugoWritingAnswer() {
         if (submitBtnReview) {
             submitBtnReview.disabled = true;
         }
-
-        feedback.innerHTML = `
-            <h3>⭕ 正解！</h3>
-            <p>
-                「${currentQuestion.correct}」の
-                書き順が正しくできました。
-            </p>
-        `;
-
-        wrongList = wrongList.filter(
-            item => item.question !== currentQuestion.question
-        );
 
         const kokugoWritingControlsElReview =
             document.getElementById("kokugoWritingControls");
@@ -4439,16 +5806,61 @@ function submitKokugoWritingAnswer() {
             reviewNextQuestion();
         };
 
+        if (kokugoTraceHadMistakeReview) {
+
+            playSound("wrong");
+
+            feedback.innerHTML =
+                kokugoTraceOrderOnlyMistakeReview
+                    ? `
+                        <h3>❌ おしい！</h3>
+                        <p>
+                            画の形はよく書けていましたが、
+                            筆順が違っていました。もう一度練習してみよう。
+                        </p>
+                    `
+                    : `
+                        <h3>❌ おしい！</h3>
+                        <p>
+                            赤くなった画をもう一度見て、練習してみよう。
+                        </p>
+                    `;
+
+            return;
+        }
+
+        reviewScore++;
+
+        addPoint(10);
+        showSakura();
+        playSound("correct");
+
+        feedback.innerHTML = `
+            <h3>⭕ 正解！</h3>
+            <p>
+                「${currentQuestion.correct}」の
+                書き順が正しくできました。
+            </p>
+        `;
+
+        wrongList = wrongList.filter(
+            item => item.question !== currentQuestion.question
+        );
+
         return;
     }
 
-    // 🌸 全画が完成しているか確認
+    // =========================================
+    // 🌸 バグ修正：熟語対応
+    // 全画が完成しているか＝最後の文字まで
+    // 書き終わっているかを確認する
+    // =========================================
+
     if (
         !currentKokugoQuestion ||
         !currentKokugoQuestion.a ||
-        !kokugoKanjiWritingData[
-            currentKokugoQuestion.a
-        ]
+        !kokugoWritingChars ||
+        kokugoWritingChars.length === 0
     ) {
         console.log(
             "🌸 漢字書き回答データ確認エラー"
@@ -4457,14 +5869,31 @@ function submitKokugoWritingAnswer() {
         return;
     }
 
+    const isLastChar =
+        kokugoWritingCharIndex ===
+        kokugoWritingChars.length - 1;
+
     const data =
         kokugoKanjiWritingData[
-            currentKokugoQuestion.a
+            kokugoWritingChars[kokugoWritingCharIndex]
         ];
 
+    if (!data) {
+        console.log(
+            "🌸 漢字書き回答データ確認エラー"
+        );
+
+        return;
+    }
+
+    // 🌸 なぞる方式（小1・小2）は画ごとに採点済みのため、
+    // 🌸 最後の文字まで来ているかどうかだけ確認すればよい
     if (
-        kokugoWritingAnswer.length !==
-        data.strokeCount
+        !isLastChar ||
+        (
+            !kokugoTraceMode &&
+            kokugoWritingAnswer.length !== data.strokeCount
+        )
     ) {
 
         console.log(
@@ -4477,52 +5906,48 @@ function submitKokugoWritingAnswer() {
     // 🌸 回答済みにする
     kokugoAnswered = true;
 
+    // 🌸 なぞる方式で1画でも間違いがあった場合、または
+    // 🌸 画は合っていても書き順が違っていた場合は
+    // 🌸 正解にはせず、この回のドリルの最後にもう一度出題する
+    const kokugoTraceHadMistake =
+        kokugoTraceMode &&
+        (
+            kokugoTraceWordHadMistake ||
+            kokugoTraceWordHadOrderMistake
+        );
+
+    // 🌸 画の形はすべて合っていたが、書き順だけが違っていた場合
+    const kokugoTraceOrderOnlyMistake =
+        kokugoTraceMode &&
+        kokugoTraceWordHadOrderMistake &&
+        !kokugoTraceWordHadMistake;
+
     // 🌸 Engine20
-// 国語・単元別記録
-const kokugoUnit =
-    currentKokugoQuestion.unit;
+    // 国語・単元別記録
+    const kokugoUnit =
+        currentKokugoQuestion.unit;
 
-// 🌸 以前の学習記録に units がない場合
-if (!studyRecord.kokugo.units) {
-    studyRecord.kokugo.units = {};
-}
-
-if (kokugoUnit) {
-
-    if (!studyRecord.kokugo.units[kokugoUnit]) {
-
-        studyRecord.kokugo.units[kokugoUnit] = {
-            answered: 0,
-            correct: 0
-        };
-
+    // 🌸 以前の学習記録に units がない場合
+    if (!studyRecord.kokugo.units) {
+        studyRecord.kokugo.units = {};
     }
 
-    studyRecord.kokugo.units[kokugoUnit].answered++;
+    if (kokugoUnit) {
 
-}
+        if (!studyRecord.kokugo.units[kokugoUnit]) {
 
-// 🌸 Engine20
-// 国語回答数
-studyRecord.kokugo.answered++;
+            studyRecord.kokugo.units[kokugoUnit] = {
+                answered: 0,
+                correct: 0
+            };
+        }
 
-// 🌸 国語正解数
-studyRecord.kokugo.correct++;
+        studyRecord.kokugo.units[kokugoUnit].answered++;
+    }
 
-// 🌸 国語・単元別正解数
-if (kokugoUnit) {
-    studyRecord.kokugo.units[kokugoUnit].correct++;
-}
-
-    // 🌸 正解
-    kokugoScore++;
-
-    // 🌸 Sakura Point +10
-    addPoint(10);
-
-    // 🌸 正解演出
-    showSakura();
-    playSound("correct");
+    // 🌸 Engine20
+    // 国語回答数（正解／不正解にかかわらずカウントする）
+    studyRecord.kokugo.answered++;
 
     // 🌸 こたえるボタンを無効化
     const submitBtn =
@@ -4533,24 +5958,6 @@ if (kokugoUnit) {
     if (submitBtn) {
         submitBtn.disabled = true;
     }
-
-    // 🌸 フィードバック
-    feedback.innerHTML = `
-        <h3>⭕ 正解！</h3>
-        <p>
-            「${currentKokugoQuestion.a}」の
-            書き順が正しくできました。
-        </p>
-    `;
-
-    // 🌸 スコア表示
-    document.getElementById(
-        "scoreText"
-    ).textContent =
-        `スコア: ${kokugoScore}`;
-
-    // 🌸 今日の学習記録保存
-    saveTodayStudyRecord();
 
     // 🌸 「次の問題」ボタンを「けす／こたえる」の右に並べる
     const kokugoWritingControlsEl =
@@ -4569,17 +5976,57 @@ if (kokugoUnit) {
 
             kokugoIndex++;
 
-            // 🌸 10問終了
+            // 🌸 予定していた問題を出し終えた
             if (
                 kokugoIndex >=
                 currentKokugoQuiz.length
             ) {
 
+                // 🌸 バグ修正：終了したあと画面がそのまま止まって
+                // 🌸 どこにも行けなくなっていたため、他のコースと
+                // 🌸 同じように「復習する／学年選択へ戻る／
+                // 🌸 ホームへ戻る」ボタンを付ける
+                // 🌸 バグ修正：算数の結果画面と同じように、
+                // 🌸 間違えた問題（問題文・自分の答え・正解）を
+                // 🌸 まとめて表示するようにする
+                // 🌸 バグ修正：ボタンが小さすぎたので、
+                // 🌸 専用クラス kokugoEndBtn で大きく表示する
+                const kokugoEndWrongListHtml =
+                    wrongList.length > 0
+                        ? `
+                            <h3>📉 間違えた問題</h3>
+                            ${
+                                wrongList.map(item => `
+                                    <div class="resultCard">
+                                        <p><strong>問題：</strong>${item.question}</p>
+                                        <p>✍ あなたの答え：${item.userAnswer}</p>
+                                        <p>✅ 正解：${item.correct}</p>
+                                    </div>
+                                    <hr>
+                                `).join("")
+                            }
+                        `
+                        : `<p>🎉 全問正解です！</p>`;
+
                 feedback.innerHTML = `
-                    🌸 国語終了！
-                    <br>
-                    スコア：
-                    ${kokugoScore}
+                    <h3>🌸 国語終了！</h3>
+                    <p>スコア：${kokugoScore}</p>
+                    ${kokugoEndWrongListHtml}
+                    ${
+                        wrongList.length > 0
+                            ? `
+                                <button class="kokugoEndBtn" onclick="startReview()">
+                                    📚 復習する
+                                </button>
+                            `
+                            : ""
+                    }
+                    <button class="kokugoEndBtn" onclick="backToGrade()">
+                        🎓 学年選択へ戻る
+                    </button>
+                    <button class="kokugoEndBtn" onclick="backToHome()">
+                        🏠 ホームへ戻る
+                    </button>
                 `;
 
                 nextBtn.style.display =
@@ -4591,6 +6038,114 @@ if (kokugoUnit) {
             // 🌸 次の問題
             showKokugoQuestion();
         };
+
+    // =========================================
+    // 🌸 なぞって書いた画の中に間違いがあった場合
+    // 🌸 （正解にはせず、赤い画をもう一度見せて終わる。
+    // 🌸 　同じ問題は、まだ1回目ならこの回のドリルの
+    // 🌸 　最後にもう一度出題する）
+    // =========================================
+
+    if (kokugoTraceHadMistake) {
+
+        playSound("wrong");
+
+        feedback.innerHTML =
+            kokugoTraceOrderOnlyMistake
+                ? `
+                    <h3>❌ おしい！</h3>
+                    <p>
+                        「${currentKokugoQuestion.a}」は
+                        画の形はよく書けていましたが、
+                        筆順が違っていました。もう一度練習してみよう。
+                    </p>
+                `
+                : `
+                    <h3>❌ おしい！</h3>
+                    <p>
+                        「${currentKokugoQuestion.a}」は
+                        赤くなった画をもう一度見て、練習してみよう。
+                    </p>
+                `;
+
+        document.getElementById(
+            "scoreText"
+        ).textContent =
+            `スコア: ${kokugoScore}`;
+
+        saveTodayStudyRecord();
+
+        if (!currentKokugoQuestion._kokugoRetryDone) {
+
+            currentKokugoQuiz.push({
+                ...currentKokugoQuestion,
+                _kokugoRetryDone: true,
+                // 🌸 バグ修正：もう一度出題したときも「第◯問」の
+                // 🌸 表示がもとの問題番号のままになるよう、
+                // 🌸 最初に出題されたときの番号を覚えておく
+                _kokugoOriginalNumber:
+                    currentKokugoQuestion._kokugoOriginalNumber ||
+                    (kokugoIndex + 1)
+            });
+        }
+
+        wrongList.push({
+            question: currentKokugoQuestion.q,
+            correct: currentKokugoQuestion.a,
+            userAnswer:
+                kokugoTraceOrderOnlyMistake
+                    ? "（なぞり書き：筆順違い）"
+                    : "（なぞり書き）",
+            isCorrect: false,
+            unit: currentKokugoQuestion.unit,
+            type: currentKokugoQuestion.type,
+            memo: currentKokugoQuestion.memo
+        });
+
+        console.log(
+            "🌸 漢字書き：なぞり間違いあり:",
+            currentKokugoQuestion.a,
+            kokugoTraceOrderOnlyMistake ? "(筆順違い)" : "(形の間違い)"
+        );
+
+        return;
+    }
+
+    // 🌸 国語正解数
+    studyRecord.kokugo.correct++;
+
+    // 🌸 国語・単元別正解数
+    if (kokugoUnit) {
+        studyRecord.kokugo.units[kokugoUnit].correct++;
+    }
+
+    // 🌸 正解
+    kokugoScore++;
+
+    // 🌸 Sakura Point +10
+    addPoint(10);
+
+    // 🌸 正解演出
+    showSakura();
+    playSound("correct");
+
+    // 🌸 フィードバック
+    feedback.innerHTML = `
+        <h3>⭕ 正解！</h3>
+        <p>
+            「${currentKokugoQuestion.a}」の
+            書き順が正しくできました。
+        </p>
+    `;
+
+    // 🌸 スコア表示
+    document.getElementById(
+        "scoreText"
+    ).textContent =
+        `スコア: ${kokugoScore}`;
+
+    // 🌸 今日の学習記録保存
+    saveTodayStudyRecord();
 
     console.log(
         "🌸 漢字書き正解:",
@@ -10501,7 +12056,7 @@ function showReviewQuestion() {
             answerInput.style.display =
                 "none";
 
-            createKokugoWritingBoard(
+            beginKokugoWritingBoard(
                 String(
                     currentQuestion.correct
                 )
@@ -10574,6 +12129,15 @@ function showReviewQuestion() {
 
         answerInput.style.display =
             "block";
+
+        // 🌸 バグ修正：showReviewQuestion() の先頭で
+        // answerInput.readOnly = false にしているため、
+        // このままだと算数の復習でも入力欄がフォーカス可能になり、
+        // 自作のテンキーとは別にiPad等の純正キーボードまで
+        // 表示されてしまっていた。算数は常に自作テンキーのみで
+        // 入力する仕様なので、通常モードと同じく readOnly に戻す。
+        answerInput.readOnly =
+            true;
 
 
         if (keypad) {
