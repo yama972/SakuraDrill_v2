@@ -173,7 +173,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「多」の読み方をひらがなで書きましょう。",
-    a: "おおい",
+    a: "おお（い）",
     memo: "「多」は「おおい」と読みます。"
   },
   {
@@ -181,7 +181,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「少」の読み方をひらがなで書きましょう。",
-    a: "すくない",
+    a: "すく（ない）",
     memo: "「少」は「すくない」と読みます。"
   },
   {
@@ -189,7 +189,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「長」の読み方をひらがなで書きましょう。",
-    a: "ながい",
+    a: "なが（い）",
     memo: "「長」は「ながい」と読みます。"
   },
   {
@@ -197,7 +197,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「太」の読み方をひらがなで書きましょう。",
-    a: "ふとい",
+    a: "ふと（い）",
     memo: "「太」は「ふとい」と読みます。"
   },
   {
@@ -205,7 +205,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「弱」の読み方をひらがなで書きましょう。",
-    a: "よわい",
+    a: "よわ（い）",
     memo: "「弱」は「よわい」と読みます。"
   },
   {
@@ -213,7 +213,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「強」の読み方をひらがなで書きましょう。",
-    a: "つよい",
+    a: "つよ（い）",
     memo: "「強」は「つよい」と読みます。"
   },
   {
@@ -221,7 +221,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「新」の読み方をひらがなで書きましょう。",
-    a: "あたらしい",
+    a: "あたら（しい）",
     memo: "「新」は「あたらしい」と読みます。"
   },
   {
@@ -229,7 +229,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「古」の読み方をひらがなで書きましょう。",
-    a: "ふるい",
+    a: "ふる（い）",
     memo: "「古」は「ふるい」と読みます。"
   },
   {
@@ -237,7 +237,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「広」の読み方をひらがなで書きましょう。",
-    a: "ひろい",
+    a: "ひろ（い）",
     memo: "「広」は「ひろい」と読みます。"
   },
   {
@@ -901,7 +901,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「遠」の読み方をひらがなで書きましょう。",
-    a: "とおい",
+    a: "とお（い）",
     memo: "「遠」は「とおい」と読みます。"
   },
   {
@@ -949,7 +949,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「回」の読み方をひらがなで書きましょう。",
-    a: "まわる",
+    a: "まわ（る）",
     memo: "「回」は「まわる」と読みます。"
   },
   {
@@ -981,7 +981,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「楽」の読み方をひらがなで書きましょう。",
-    a: "たのしい",
+    a: "たの（しい）",
     memo: "「楽」は「たのしい」と読みます。"
   },
   {
@@ -1029,7 +1029,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「帰」の読み方をひらがなで書きましょう。",
-    a: "かえる",
+    a: "かえ（る）",
     memo: "「帰」は「かえる」と読みます。"
   },
   {
@@ -1053,7 +1053,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「教」の読み方をひらがなで書きましょう。",
-    a: "おしえる",
+    a: "おし（える）",
     memo: "「教」は「おしえる」と読みます。"
   },
   {
@@ -1061,7 +1061,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「近」の読み方をひらがなで書きましょう。",
-    a: "ちかい",
+    a: "ちか（い）",
     memo: "「近」は「ちかい」と読みます。"
   },
   {
@@ -1077,7 +1077,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「計」の読み方をひらがなで書きましょう。",
-    a: "はかる",
+    a: "はか（る）",
     memo: "「計」は「はかる」と読みます。"
   },
   {
@@ -1173,7 +1173,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「高」の読み方をひらがなで書きましょう。",
-    a: "たかい",
+    a: "たか（い）",
     memo: "「高」は「たかい」と読みます。"
   },
   {
@@ -1221,7 +1221,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「細」の読み方をひらがなで書きましょう。",
-    a: "ほそい",
+    a: "ほそ（い）",
     memo: "「細」は「ほそい」と読みます。"
   },
   {
@@ -1229,7 +1229,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「作」の読み方をひらがなで書きましょう。",
-    a: "つくる",
+    a: "つく（る）",
     memo: "「作」は「つくる」と読みます。"
   },
   {
@@ -1245,7 +1245,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「止」の読み方をひらがなで書きましょう。",
-    a: "とまる",
+    a: "と（まる）",
     memo: "「止」は「とまる」と読みます。"
   },
   {
@@ -1269,7 +1269,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「思」の読み方をひらがなで書きましょう。",
-    a: "おもう",
+    a: "おも（う）",
     memo: "「思」は「おもう」と読みます。"
   },
   {
@@ -1373,7 +1373,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「晴」の読み方をひらがなで書きましょう。",
-    a: "はれる",
+    a: "は（れる）",
     memo: "「晴」は「はれる」と読みます。"
   },
   {
@@ -1445,7 +1445,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「直」の読み方をひらがなで書きましょう。",
-    a: "なおす",
+    a: "なお（す）",
     memo: "「直」は「なおす」と読みます。"
   },
   {
@@ -1453,7 +1453,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「通」の読み方をひらがなで書きましょう。",
-    a: "とおる",
+    a: "とお（る）",
     memo: "「通」は「とおる」と読みます。"
   },
   {
@@ -1493,7 +1493,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「当」の読み方をひらがなで書きましょう。",
-    a: "あたる",
+    a: "あ（たる）",
     memo: "「当」は「あたる」と読みます。"
   },
   {
@@ -1501,7 +1501,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「答」の読み方をひらがなで書きましょう。",
-    a: "こたえる",
+    a: "こた（える）",
     memo: "「答」は「こたえる」と読みます。"
   },
   {
@@ -1581,7 +1581,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「分」の読み方をひらがなで書きましょう。",
-    a: "わける",
+    a: "わ（ける）",
     memo: "「分」は「わける」と読みます。"
   },
   {
@@ -1693,7 +1693,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「話」の読み方をひらがなで書きましょう。",
-    a: "はなす",
+    a: "はな（す）",
     memo: "「話」は「はなす」と読みます。"
   },
 
@@ -2673,7 +2673,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「考」の読み方をひらがなで書きましょう。",
-    a: "かんがえる",
+    a: "かんが（える）",
     memo: "「考」は「かんがえる」と読みます。"
   },
   {
@@ -2681,7 +2681,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「食」の読み方をひらがなで書きましょう。",
-    a: "たべる",
+    a: "た（べる）",
     memo: "「食」は「たべる」と読みます。"
   },
   {
@@ -2689,7 +2689,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「走」の読み方をひらがなで書きましょう。",
-    a: "はしる",
+    a: "はし（る）",
     memo: "「走」は「はしる」と読みます。"
   },
   {
@@ -2713,7 +2713,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「歩」の読み方をひらがなで書きましょう。",
-    a: "あるく",
+    a: "ある（く）",
     memo: "「歩」は「あるく」と読みます。"
   },
   {
@@ -2721,7 +2721,7 @@ const grade2KokugoQuestions = [
     unit: "漢字の読み（2年生）",
     type: "kanjiReading",
     q: "「明」の読み方をひらがなで書きましょう。",
-    a: "あかるい",
+    a: "あか（るい）",
     memo: "「明」は「あかるい」と読みます。"
   },
 ];

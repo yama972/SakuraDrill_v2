@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.18 Stable_09_10";
+const APP_VERSION = "v7.19 Stable_09_10";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -132,6 +132,10 @@ let kokugoMode = false;
 
 // 🌸 国語・読みボード
 let kokugoBoardAnswer = "";
+// 🌸 国語・読みボード：送りがなプリフィル機能
+// （漢字自体の読み＝タップして入力する部分／送りがな＝あらかじめ表示しておく部分）
+let kokugoBoardCoreTyped = "";
+let kokugoBoardOkuriSuffix = "";
 // 🌸 国語・1問の回答済みフラグ
 let kokugoAnswered = false;
 
@@ -2820,10 +2824,80 @@ function showKokugoQuestion() {
 }
 
 /////////////////////////////////////////////////////
+// 🌸 国語・読み：送りがなプリフィル機能
+//
+// 「たと（える）」のように（　）で送りがなを囲んだ形式に対応する。
+// （　）の外側＝漢字そのものの読み（子どもがタップして入力する部分）
+// （　）の内側＝送りがな（あらかじめ回答欄に薄く表示しておく部分）
+// （　）が無い場合は今まで通り、全文字をタップして入力する。
+/////////////////////////////////////////////////////
+
+function kokugoParseOkuriAnswer(rawAnswer) {
+
+    const str = String(rawAnswer);
+
+    const m = str.match(/^(.*?)[（(]([^）)]*)[）)]\s*$/);
+
+    if (m) {
+
+        return {
+            core: m[1],
+            okuri: m[2],
+            plain: m[1] + m[2]
+        };
+
+    }
+
+    return {
+        core: str,
+        okuri: "",
+        plain: str
+    };
+
+}
+
+function kokugoStripOkuriParens(rawAnswer) {
+
+    return kokugoParseOkuriAnswer(rawAnswer).plain;
+
+}
+
+function renderKokugoReadingAnswerDisplay() {
+
+    const answerArea =
+        document.getElementById("kokugoReadingAnswer");
+
+    if (!answerArea) return;
+
+    const escape = (s) =>
+        String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+    answerArea.innerHTML =
+        escape(kokugoBoardCoreTyped) +
+        (
+            kokugoBoardOkuriSuffix
+                ? `<span class="kokugoOkuriSuffix">${escape(kokugoBoardOkuriSuffix)}</span>`
+                : ""
+        );
+
+}
+
+/////////////////////////////////////////////////////
 // 🌸 国語・読みボード
 /////////////////////////////////////////////////////
 
-function createKokugoReadingBoard(correctAnswer) {
+function createKokugoReadingBoard(correctAnswerRaw) {
+
+    const {
+        core: correctAnswer,
+        okuri: okuriSuffix
+    } = kokugoParseOkuriAnswer(correctAnswerRaw);
+
+    kokugoBoardOkuriSuffix = okuriSuffix;
+    kokugoBoardCoreTyped = "";
 
     const board =
         document.getElementById("kokugoReadingBoard");
@@ -2862,11 +2936,12 @@ function createKokugoReadingBoard(correctAnswer) {
 
     // =========================================
     // 🌸 回答をリセット
+    // （送りがな部分はあらかじめ回答欄に薄く表示しておく）
     // =========================================
 
-    kokugoBoardAnswer = "";
+    kokugoBoardAnswer = kokugoBoardOkuriSuffix;
 
-    answerArea.textContent = "";
+    renderKokugoReadingAnswerDisplay();
 
     choices.innerHTML = "";
 
@@ -2971,20 +3046,24 @@ function createKokugoReadingBoard(correctAnswer) {
 
         btn.onclick = function () {
 
-            kokugoBoardAnswer += char;
+            kokugoBoardCoreTyped += char;
 
-            answerArea.textContent =
-                kokugoBoardAnswer;
+            kokugoBoardAnswer =
+                kokugoBoardCoreTyped +
+                kokugoBoardOkuriSuffix;
+
+            renderKokugoReadingAnswerDisplay();
 
 
             // =================================
             // 🌸 1文字以上選んだら
             // 「こたえる」を有効化
+            // （送りがなプリフィル部分だけでは有効化しない）
             // =================================
 
             if (
                 kokugoSubmitBtn &&
-                kokugoBoardAnswer.length > 0
+                kokugoBoardCoreTyped.length > 0
             ) {
 
                 kokugoSubmitBtn.disabled =
@@ -3018,18 +3097,12 @@ function createKokugoReadingBoard(correctAnswer) {
 
 function clearKokugoReadingAnswer() {
 
-    kokugoBoardAnswer = "";
+    kokugoBoardCoreTyped = "";
 
-    const answerArea =
-        document.getElementById(
-            "kokugoReadingAnswer"
-        );
+    kokugoBoardAnswer = kokugoBoardOkuriSuffix;
 
-    if (answerArea) {
-
-        answerArea.textContent = "";
-
-    }
+    // 🌸 送りがな部分はプリフィルのまま残す
+    renderKokugoReadingAnswerDisplay();
 
     // 🌸 「こたえる」を再び無効化
     const kokugoSubmitBtn =
@@ -3082,7 +3155,7 @@ function submitKokugoAnswer() {
             return;
         }
 
-        const correctAnswer = String(currentQuestion.correct).trim();
+        const correctAnswer = kokugoStripOkuriParens(String(currentQuestion.correct).trim());
         const ok = raw === correctAnswer;
 
         if (ok) {
@@ -3157,9 +3230,9 @@ function submitKokugoAnswer() {
         raw;
 
     const correctAnswer =
-        String(
-            currentKokugoQuestion.a
-        ).trim();
+        currentKokugoQuestion.type === "kanjiReading"
+            ? kokugoStripOkuriParens(String(currentKokugoQuestion.a).trim())
+            : String(currentKokugoQuestion.a).trim();
 // 🌸 Engine20 Phase6-2
 // 国語読み：柔軟判定対応
 
@@ -3265,7 +3338,13 @@ if (kokugoUnit) {
                 currentKokugoQuestion.q,
 
             correct:
-                currentKokugoQuestion.a,
+                correctAnswer,
+
+            // 🌸 送りがなプリフィル用：（　）表記つきの元の答えを
+            // 保持しておき、復習モードの読みボードでも
+            // 同じプリフィル表示を再現できるようにする
+            correctRaw:
+                String(currentKokugoQuestion.a),
 
             userAnswer:
                 userAnswer,
@@ -12038,6 +12117,7 @@ function showReviewQuestion() {
 
             createKokugoReadingBoard(
                 String(
+                    currentQuestion.correctRaw ||
                     currentQuestion.correct
                 )
             );

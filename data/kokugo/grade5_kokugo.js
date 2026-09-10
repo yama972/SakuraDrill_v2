@@ -932,7 +932,7 @@ const grade5KokugoQuestions = [
     unit: "漢字の読み（5年生）",
     type: "kanjiReading",
     q: "「囲」の読み方をひらがなで書きましょう。",
-    a: "かこむ",
+    a: "かこ（む）",
     memo: "「囲」は「かこむ」と読みます。"
   },
   {
@@ -948,7 +948,7 @@ const grade5KokugoQuestions = [
     unit: "漢字の読み（5年生）",
     type: "kanjiReading",
     q: "「喜」の読み方をひらがなで書きましょう。",
-    a: "よろこぶ",
+    a: "よろこ（ぶ）",
     memo: "「喜」は「よろこぶ」と読みます。"
   },
   {
@@ -956,7 +956,7 @@ const grade5KokugoQuestions = [
     unit: "漢字の読み（5年生）",
     type: "kanjiReading",
     q: "「救」の読み方をひらがなで書きましょう。",
-    a: "すくう",
+    a: "すく（う）",
     memo: "「救」は「すくう」と読みます。"
   },
   {

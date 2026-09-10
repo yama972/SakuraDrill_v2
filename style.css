@@ -2239,6 +2239,13 @@ button {
     text-align: center;
 }
 
+/* 🌸 送りがなプリフィル：漢字自体の読みではない部分（活用語尾など）は
+   あらかじめ回答欄にうすく表示しておき、子どもがタップするのは
+   漢字そのものの読みの部分だけにする */
+.kokugoOkuriSuffix {
+    opacity: 0.4;
+}
+
 #kokugoReadingChoices {
     display: grid;
     grid-template-columns: repeat(5, 1fr);

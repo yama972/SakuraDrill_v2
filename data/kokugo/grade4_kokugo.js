@@ -61,7 +61,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「栄」の読み方をひらがなで書きましょう。",
-    a: "さかえる",
+    a: "さか（える）",
     memo: "「栄」は「さかえる」と読みます。"
   },
   {
@@ -85,7 +85,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「加」の読み方をひらがなで書きましょう。",
-    a: "くわえる",
+    a: "くわ（える）",
     memo: "「加」は「くわえる」と読みます。"
   },
   {
@@ -93,7 +93,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「果」の読み方をひらがなで書きましょう。",
-    a: "はたす",
+    a: "はた（す）",
     memo: "「果」は「はたす」と読みます。"
   },
   {
@@ -125,7 +125,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「改」の読み方をひらがなで書きましょう。",
-    a: "あらためる",
+    a: "あらた（める）",
     memo: "「改」は「あらためる」と読みます。"
   },
   {
@@ -165,7 +165,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「覚」の読み方をひらがなで書きましょう。",
-    a: "おぼえる",
+    a: "おぼ（える）",
     memo: "「覚」は「おぼえる」と読みます。"
   },
   {
@@ -213,7 +213,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「願」の読み方をひらがなで書きましょう。",
-    a: "ねがう",
+    a: "ねが（う）",
     memo: "「願」は「ねがう」と読みます。"
   },
   {
@@ -269,7 +269,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「求」の読み方をひらがなで書きましょう。",
-    a: "もとめる",
+    a: "もと（める）",
     memo: "「求」は「もとめる」と読みます。"
   },
   {
@@ -293,7 +293,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「挙」の読み方をひらがなで書きましょう。",
-    a: "あげる",
+    a: "あ（げる）",
     memo: "「挙」は「あげる」と読みます。"
   },
   {
@@ -333,7 +333,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「競」の読み方をひらがなで書きましょう。",
-    a: "きそう",
+    a: "きそ（う）",
     memo: "「競」は「きそう」と読みます。"
   },
   {
@@ -341,7 +341,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「極」の読み方をひらがなで書きましょう。",
-    a: "きわめる",
+    a: "きわ（める）",
     memo: "「極」は「きわめる」と読みます。"
   },
   {
@@ -965,7 +965,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「欠」の読み方をひらがなで書きましょう。",
-    a: "かける",
+    a: "か（ける）",
     memo: "「欠」は「かける」と読みます。"
   },
   {
@@ -973,7 +973,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「結」の読み方をひらがなで書きましょう。",
-    a: "むすぶ",
+    a: "むす（ぶ）",
     memo: "「結」は「むすぶ」と読みます。"
   },
   {
@@ -997,7 +997,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「固」の読み方をひらがなで書きましょう。",
-    a: "かたい",
+    a: "かた（い）",
     memo: "「固」は「かたい」と読みます。"
   },
   {
@@ -1013,7 +1013,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「好」の読み方をひらがなで書きましょう。",
-    a: "このむ",
+    a: "この（む）",
     memo: "「好」は「このむ」と読みます。"
   },
   {
@@ -1101,7 +1101,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「参」の読み方をひらがなで書きましょう。",
-    a: "まいる",
+    a: "まい（る）",
     memo: "「参」は「まいる」と読みます。"
   },
   {
@@ -1117,7 +1117,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「残」の読み方をひらがなで書きましょう。",
-    a: "のこす",
+    a: "のこ（す）",
     memo: "「残」は「のこす」と読みます。"
   },
   {
@@ -1133,7 +1133,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「試」の読み方をひらがなで書きましょう。",
-    a: "こころみる",
+    a: "こころ（みる）",
     memo: "「試」は「こころみる」と読みます。"
   },
   {
@@ -1149,7 +1149,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「治」の読み方をひらがなで書きましょう。",
-    a: "なおす",
+    a: "なお（す）",
     memo: "「治」は「なおす」と読みます。"
   },
   {
@@ -1181,7 +1181,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「失」の読み方をひらがなで書きましょう。",
-    a: "うしなう",
+    a: "うしな（う）",
     memo: "「失」は「うしなう」と読みます。"
   },
   {
@@ -1189,7 +1189,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「借」の読み方をひらがなで書きましょう。",
-    a: "かりる",
+    a: "か（りる）",
     memo: "「借」は「かりる」と読みます。"
   },
   {
@@ -1213,7 +1213,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「祝」の読み方をひらがなで書きましょう。",
-    a: "いわう",
+    a: "いわ（う）",
     memo: "「祝」は「いわう」と読みます。"
   },
   {
@@ -1245,7 +1245,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「笑」の読み方をひらがなで書きましょう。",
-    a: "わらう",
+    a: "わら（う）",
     memo: "「笑」は「わらう」と読みます。"
   },
   {
@@ -1253,7 +1253,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「唱」の読み方をひらがなで書きましょう。",
-    a: "となえる",
+    a: "とな（える）",
     memo: "「唱」は「となえる」と読みます。"
   },
   {
@@ -1269,7 +1269,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「照」の読み方をひらがなで書きましょう。",
-    a: "てらす",
+    a: "て（らす）",
     memo: "「照」は「てらす」と読みます。"
   },
   {
@@ -1325,7 +1325,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「省」の読み方をひらがなで書きましょう。",
-    a: "はぶく",
+    a: "はぶ（く）",
     memo: "「省」は「はぶく」と読みます。"
   },
   {
@@ -1333,7 +1333,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「清」の読み方をひらがなで書きましょう。",
-    a: "きよまる",
+    a: "きよ（まる）",
     memo: "「清」は「きよまる」と読みます。"
   },
   {
@@ -1389,7 +1389,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「浅」の読み方をひらがなで書きましょう。",
-    a: "あさい",
+    a: "あさ（い）",
     memo: "「浅」は「あさい」と読みます。"
   },
   {
@@ -1397,7 +1397,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「戦」の読み方をひらがなで書きましょう。",
-    a: "たたかう",
+    a: "たたか（う）",
     memo: "「戦」は「たたかう」と読みます。"
   },
   {
@@ -1405,7 +1405,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「選」の読み方をひらがなで書きましょう。",
-    a: "えらぶ",
+    a: "えら（ぶ）",
     memo: "「選」は「えらぶ」と読みます。"
   },
   {
@@ -1421,7 +1421,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「争」の読み方をひらがなで書きましょう。",
-    a: "あらそう",
+    a: "あらそ（う）",
     memo: "「争」は「あらそう」と読みます。"
   },
   {
@@ -1461,7 +1461,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「続」の読み方をひらがなで書きましょう。",
-    a: "つづく",
+    a: "つづ（く）",
     memo: "「続」は「つづく」と読みます。"
   },
   {
@@ -1549,7 +1549,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「低」の読み方をひらがなで書きましょう。",
-    a: "ひくい",
+    a: "ひく（い）",
     memo: "「低」は「ひくい」と読みます。"
   },
   {
@@ -1581,7 +1581,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「伝」の読み方をひらがなで書きましょう。",
-    a: "つたえる",
+    a: "つた（える）",
     memo: "「伝」は「つたえる」と読みます。"
   },
   {
@@ -1597,7 +1597,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「努」の読み方をひらがなで書きましょう。",
-    a: "つとめる",
+    a: "つと（める）",
     memo: "「努」は「つとめる」と読みます。"
   },
   {
@@ -1613,7 +1613,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「働」の読み方をひらがなで書きましょう。",
-    a: "はたらく",
+    a: "はたら（く）",
     memo: "「働」は「はたらく」と読みます。"
   },
   {
@@ -1661,7 +1661,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「熱」の読み方をひらがなで書きましょう。",
-    a: "あつい",
+    a: "あつ（い）",
     memo: "「熱」は「あつい」と読みます。"
   },
   {
@@ -1677,7 +1677,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「敗」の読み方をひらがなで書きましょう。",
-    a: "やぶれる",
+    a: "やぶ（れる）",
     memo: "「敗」は「やぶれる」と読みます。"
   },
   {
@@ -1813,7 +1813,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「別」の読み方をひらがなで書きましょう。",
-    a: "わかれる",
+    a: "わか（れる）",
     memo: "「別」は「わかれる」と読みます。"
   },
   {
@@ -1829,7 +1829,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「変」の読み方をひらがなで書きましょう。",
-    a: "かわる",
+    a: "か（わる）",
     memo: "「変」は「かわる」と読みます。"
   },
   {
@@ -1845,7 +1845,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「包」の読み方をひらがなで書きましょう。",
-    a: "つつむ",
+    a: "つつ（む）",
     memo: "「包」は「つつむ」と読みます。"
   },
   {
@@ -1861,7 +1861,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「望」の読み方をひらがなで書きましょう。",
-    a: "のぞむ",
+    a: "のぞ（む）",
     memo: "「望」は「のぞむ」と読みます。"
   },
   {
@@ -1885,7 +1885,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「満」の読み方をひらがなで書きましょう。",
-    a: "みたす",
+    a: "み（たす）",
     memo: "「満」は「みたす」と読みます。"
   },
   {
@@ -1925,7 +1925,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「勇」の読み方をひらがなで書きましょう。",
-    a: "いさむ",
+    a: "いさ（む）",
     memo: "「勇」は「いさむ」と読みます。"
   },
   {
@@ -1941,7 +1941,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「養」の読み方をひらがなで書きましょう。",
-    a: "やしなう",
+    a: "やしな（う）",
     memo: "「養」は「やしなう」と読みます。"
   },
   {
@@ -1949,7 +1949,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「浴」の読み方をひらがなで書きましょう。",
-    a: "あびる",
+    a: "あ（びる）",
     memo: "「浴」は「あびる」と読みます。"
   },
   {
@@ -1989,7 +1989,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「量」の読み方をひらがなで書きましょう。",
-    a: "はかる",
+    a: "はか（る）",
     memo: "「量」は「はかる」と読みます。"
   },
   {
@@ -2021,7 +2021,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「冷」の読み方をひらがなで書きましょう。",
-    a: "つめたい",
+    a: "つめ（たい）",
     memo: "「冷」は「つめたい」と読みます。"
   },
   {
@@ -2029,7 +2029,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「例」の読み方をひらがなで書きましょう。",
-    a: "たとえる",
+    a: "たと（える）",
     memo: "「例」は「たとえる」と読みます。"
   },
   {
@@ -2037,7 +2037,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「連」の読み方をひらがなで書きましょう。",
-    a: "つれる",
+    a: "つ（れる）",
     memo: "「連」は「つれる」と読みます。"
   },
   {
@@ -2045,7 +2045,7 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「老」の読み方をひらがなで書きましょう。",
-    a: "おいる",
+    a: "お（いる）",
     memo: "「老」は「おいる」と読みます。"
   },
   {
