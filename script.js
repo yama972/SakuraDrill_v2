@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.17 Stable_09_10";
+const APP_VERSION = "v7.18 Stable_09_10";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -3628,7 +3628,8 @@ function isKokugoWritingTraceGrade() {
         (
             currentUser.grade === "grade1" ||
             currentUser.grade === "grade2" ||
-            currentUser.grade === "grade4"
+            currentUser.grade === "grade4" ||
+            currentUser.grade === "grade7"
         )
     );
 }
