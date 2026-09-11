@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.19 Stable_09_10";
+const APP_VERSION = "v7.20 Stable_09_10";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -184,6 +184,8 @@ let currentRikaQuestion = null;
 let rikaAnswered = false;
 let rikaMode = false;
 let rikaWrongList = [];
+let rikaReviewMode = false;
+let rikaReviewScore = 0;
 
 // 🌸 英語（小学3〜6年・中学1年）
 let currentEnglishQuiz = [];
@@ -10145,7 +10147,16 @@ function showRikaQuestion() {
         currentRikaQuiz.length
     ) {
 
-        showRikaResult();
+        // 🌸 復習モードでは専用の結果画面を表示する
+        if (rikaReviewMode) {
+
+            showRikaReviewResult();
+
+        } else {
+
+            showRikaResult();
+
+        }
 
         return;
     }
@@ -10274,24 +10285,30 @@ function submitRikaAnswer() {
     const rikaUnit =
         currentRikaQuestion.unit;
 
-    if (!studyRecord.rika.units) {
-        studyRecord.rika.units = {};
-    }
+    // 🌸 バグ修正：復習モード（間違えた問題だけを出題）では
+    // 1問目の時にすでに学習記録は付いているので、ここでは
+    // 二重に記録しない。スコアも本編とは別の rikaReviewScore で数える。
+    if (!rikaReviewMode) {
 
-    if (rikaUnit) {
-
-        if (!studyRecord.rika.units[rikaUnit]) {
-
-            studyRecord.rika.units[rikaUnit] = {
-                answered: 0,
-                correct: 0
-            };
+        if (!studyRecord.rika.units) {
+            studyRecord.rika.units = {};
         }
 
-        studyRecord.rika.units[rikaUnit].answered++;
-    }
+        if (rikaUnit) {
 
-    studyRecord.rika.answered++;
+            if (!studyRecord.rika.units[rikaUnit]) {
+
+                studyRecord.rika.units[rikaUnit] = {
+                    answered: 0,
+                    correct: 0
+                };
+            }
+
+            studyRecord.rika.units[rikaUnit].answered++;
+        }
+
+        studyRecord.rika.answered++;
+    }
 
     answerInput.disabled = true;
 
@@ -10303,14 +10320,6 @@ function submitRikaAnswer() {
         )
     ) {
 
-        rikaScore++;
-
-        studyRecord.rika.correct++;
-
-        if (rikaUnit && studyRecord.rika.units[rikaUnit]) {
-            studyRecord.rika.units[rikaUnit].correct++;
-        }
-
         feedback.innerHTML = `
             <h3>⭕ 正解！</h3>
             <p>📖 <strong>解説</strong></p>
@@ -10318,19 +10327,32 @@ function submitRikaAnswer() {
         `;
 
         playSound("correct");
-        addPoint(10);
-        showSakura();
+
+        if (rikaReviewMode) {
+
+            // 🌸 復習で正解できた問題は、もう間違えたリストに残さない
+            rikaReviewScore++;
+
+            rikaWrongList = rikaWrongList.filter(
+                item => item.question !== currentRikaQuestion.q
+            );
+
+        } else {
+
+            rikaScore++;
+
+            studyRecord.rika.correct++;
+
+            if (rikaUnit && studyRecord.rika.units[rikaUnit]) {
+                studyRecord.rika.units[rikaUnit].correct++;
+            }
+
+            addPoint(10);
+            showSakura();
+
+        }
 
     } else {
-
-        rikaWrongList.push({
-            question: currentRikaQuestion.q,
-            correct: correctAnswer,
-            userAnswer: userAnswer,
-            unit: currentRikaQuestion.unit,
-            type: currentRikaQuestion.type,
-            memo: currentRikaQuestion.memo
-        });
 
         feedback.innerHTML = `
             <h3>❌ 不正解</h3>
@@ -10340,6 +10362,21 @@ function submitRikaAnswer() {
         `;
 
         playSound("wrong");
+
+        // 🌸 復習中にまた間違えた問題は、すでに rikaWrongList に
+        // 入っているので重複して追加しない
+        if (!rikaReviewMode) {
+
+            rikaWrongList.push({
+                question: currentRikaQuestion.q,
+                correct: correctAnswer,
+                userAnswer: userAnswer,
+                unit: currentRikaQuestion.unit,
+                type: currentRikaQuestion.type,
+                memo: currentRikaQuestion.memo
+            });
+
+        }
     }
 
     // =========================================
@@ -10376,11 +10413,15 @@ function submitRikaAnswer() {
             "none";
     }
 
-    // 🌸 理科1問分の学習時間を確定
-    finishStudyQuestion("rika");
+    if (!rikaReviewMode) {
 
-    // 🌸 今日の学習記録を自動保存
-    saveTodayStudyRecord();
+        // 🌸 理科1問分の学習時間を確定
+        finishStudyQuestion("rika");
+
+        // 🌸 今日の学習記録を自動保存
+        saveTodayStudyRecord();
+
+    }
 
 }
 
@@ -10463,6 +10504,11 @@ function showRikaResult() {
             }
         );
 
+        // 🌸 間違えた問題だけをもう一度出題する復習ボタン
+        resultArea.innerHTML += `
+            <button onclick="startRikaReview()">📚 間違えた問題を復習する</button>
+        `;
+
     } else {
 
         resultArea.innerHTML += `
@@ -10478,6 +10524,202 @@ function showRikaResult() {
 
     console.log(
         "🌸 理科結果画面表示完了"
+    );
+
+}
+
+/////////////////////////////////////////////////////
+// 🌸 理科・間違えた問題の復習
+/////////////////////////////////////////////////////
+
+function startRikaReview() {
+
+    if (rikaWrongList.length === 0) {
+
+        alert("🌸 復習する問題はありません！");
+
+        return;
+    }
+
+    // 🌸 間違えた問題だけを出題リストにする
+    // （rikaWrongList の形 {question, correct, ...} を
+    // 　通常の出題データの形 {q, a, ...} に変換する）
+    currentRikaQuiz =
+        rikaWrongList.map(item => ({
+            q: item.question,
+            a: item.correct,
+            unit: item.unit,
+            type: item.type,
+            memo: item.memo
+        }));
+
+    rikaIndex = 0;
+    rikaReviewScore = 0;
+    currentRikaQuestion = null;
+    rikaAnswered = false;
+
+    // =========================================
+    // 🌸 復習モード開始（他教科モードは解除）
+    // =========================================
+
+    kokugoMode = false;
+    reviewMode = false;
+    englishMode = false;
+    rikaMode = true;
+    rikaReviewMode = true;
+
+    // =========================================
+    // 🌸 画面整理
+    // =========================================
+
+    clearScreens();
+
+    document.getElementById(
+        "quizArea"
+    ).style.display =
+        "block";
+
+    document.getElementById(
+        "resultArea"
+    ).style.display =
+        "none";
+
+    // 🌸 算数テンキー非表示
+    const keypad =
+        document.getElementById(
+            "mathKeypad"
+        );
+
+    if (keypad) {
+
+        keypad.style.display =
+            "none";
+    }
+
+    hideHissanScratchPad();
+
+    const rikaControls =
+        document.getElementById(
+            "rikaControls"
+        );
+
+    if (rikaControls) {
+
+        rikaControls.style.display =
+            "flex";
+    }
+
+    const englishControlsFromRika =
+        document.getElementById(
+            "englishControls"
+        );
+
+    if (englishControlsFromRika) {
+
+        englishControlsFromRika.style.display =
+            "none";
+    }
+
+    feedback.textContent =
+        "";
+
+    nextBtn.style.display =
+        "none";
+
+    document.getElementById(
+        "scoreText"
+    ).textContent =
+        "スコア: 0";
+
+    // =========================================
+    // 🌸 1問目表示
+    // =========================================
+
+    showRikaQuestion();
+
+}
+
+/////////////////////////////////////////////////////
+// 🌸 理科・復習結果画面
+/////////////////////////////////////////////////////
+
+function showRikaReviewResult() {
+
+    console.log(
+        "🌸 理科復習結果:",
+        rikaReviewScore
+    );
+
+    rikaMode = false;
+    rikaReviewMode = false;
+
+    const rikaControls =
+        document.getElementById(
+            "rikaControls"
+        );
+
+    if (rikaControls) {
+
+        rikaControls.style.display =
+            "none";
+    }
+
+    const quizAreaEl =
+        document.getElementById(
+            "quizArea"
+        );
+
+    if (quizAreaEl) {
+
+        quizAreaEl.style.display =
+            "none";
+    }
+
+    const resultArea =
+        document.getElementById(
+            "resultArea"
+        );
+
+    if (!resultArea) {
+
+        console.error(
+            "❌ resultArea が見つかりません"
+        );
+
+        return;
+    }
+
+    resultArea.innerHTML = "";
+
+    resultArea.style.display =
+        "block";
+
+    resultArea.innerHTML = `
+        <h2>🌸 理科の復習おつかれさまでした！</h2>
+        <p><strong>復習結果：${rikaReviewScore} / ${currentRikaQuiz.length} 問正解</strong></p>
+    `;
+
+    if (rikaWrongList.length > 0) {
+
+        resultArea.innerHTML += `
+            <h3>📉 もう一度復習しましょう</h3>
+            <button onclick="startRikaReview()">📚 残り問題を復習する</button>
+        `;
+
+    } else {
+
+        resultArea.innerHTML += `
+            <h3>🎉 苦手な問題を全部克服しました！</h3>
+        `;
+    }
+
+    resultArea.innerHTML += `
+        <button onclick="backToGrade()">🎓 学年選択へ戻る</button>
+        <button onclick="backToHome()">🏠 ホームへ戻る</button>
+    `;
+
+    console.log(
+        "🌸 理科復習結果画面表示完了"
     );
 
 }
