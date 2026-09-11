@@ -363,7 +363,7 @@ const grade4Questions = [
   {
     grade: 4,
     unit: "分数（同分母のたし算・ひき算）",
-    type: "fraction",
+    type: "mixedFraction",
     q: "9/4 を帯分数で表すと？",
     a: "2と1/4",
     memo: "9÷4=2あまり1なので2と1/4"
