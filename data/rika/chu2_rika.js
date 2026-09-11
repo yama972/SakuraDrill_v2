@@ -142,6 +142,7 @@ const chu2RikaQuestions = [
     type: "physics",
     q: "電力量の単位は？",
     a: "ジュール（J）またはワット時（Wh）",
+    answers: ["ジュール（J）またはワット時（Wh）", "ジュール", "J", "ワット時", "Wh"],
     memo: "電力量はジュール（J）やワット時（Wh）で表されます。"
   },
   {
