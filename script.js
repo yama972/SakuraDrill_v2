@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.41 Stable_09_11";
+const APP_VERSION = "v7.42 Stable_09_11";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -10384,7 +10384,10 @@ function submitRikaAnswer() {
                 userAnswer: userAnswer,
                 unit: currentRikaQuestion.unit,
                 type: currentRikaQuestion.type,
-                memo: currentRikaQuestion.memo
+                memo: currentRikaQuestion.memo,
+                // 🌸 バグ修正：復習モードでも別解（answers）が
+                // 有効になるよう、元の問題の answers も保存しておく
+                answers: currentRikaQuestion.answers
             });
 
         }
@@ -10561,7 +10564,10 @@ function startRikaReview() {
             a: item.correct,
             unit: item.unit,
             type: item.type,
-            memo: item.memo
+            memo: item.memo,
+            // 🌸 バグ修正：復習モードでも別解（answers）を
+            // 引き継いで正しく採点できるようにする
+            answers: item.answers
         }));
 
     rikaIndex = 0;
