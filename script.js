@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.39 Stable_09_11";
+const APP_VERSION = "v7.40 Stable_09_11";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -916,10 +916,9 @@ function loadUsers() {
         });
 
     } else {
-        users = [
-            { name: "市華", grade: "grade4", icon: "👧" },
-            { name: "心平", grade: "grade2", icon: "👦" }
-        ];
+        // 🌸 陽多・瑛大と同じ扱いにするため、名前をコードに固定登録せず
+        // 空の状態から「＋ 新しく追加」で利用者登録してもらう方式に統一
+        users = [];
 
         saveUsers();
     }
