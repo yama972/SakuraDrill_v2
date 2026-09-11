@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.37 Stable_09_11";
+const APP_VERSION = "v7.38 Stable_09_11";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -8067,16 +8067,25 @@ function buildHissanRowBox(aStr, bStr, opSymbol, answerStr) {
             fracIdx[p] = boxIndex++;
         }
 
+        // 🌸 バグ修正：ひき算などで、上の式（大きい方の数）の整数部の
+        // けた数より、正解の整数部のけた数の方が少ない場合
+        // （例：13.8－7.7＝6.1で十の位が不要）、書き込む必要のない
+        // 左側のマスは□（入力できないマス）にして、まぎらわしさを
+        // なくす。answerStrが渡されていない時は今まで通り全マス入力式。
+        const neededIntLen =
+            ansP.intPart !== "" ? ansP.intPart.length : maxIntLen;
+        const blankIntCount = Math.max(0, maxIntLen - neededIntLen);
+
         if (opSymbol === "×") {
 
             for (let p = 0; p < maxIntLen; p++) {
-                intIdx[p] = boxIndex++;
+                intIdx[p] = p < blankIntCount ? null : boxIndex++;
             }
 
         } else {
 
             for (let p = maxIntLen - 1; p >= 0; p--) {
-                intIdx[p] = boxIndex++;
+                intIdx[p] = p < blankIntCount ? null : boxIndex++;
             }
 
         }
@@ -8084,7 +8093,10 @@ function buildHissanRowBox(aStr, bStr, opSymbol, answerStr) {
         let html = `<span class="hissanOp">&nbsp;</span>`;
 
         for (let p = 0; p < maxIntLen; p++) {
-            html += `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${intIdx[p]}" autocomplete="off">`;
+            html +=
+                intIdx[p] === null
+                    ? `<span class="hissanDigitCell"></span>`
+                    : `<input type="text" inputmode="numeric" readonly class="hissanAnswerBox" data-hissan-idx="${intIdx[p]}" autocomplete="off">`;
         }
 
         if (hasDot) {
