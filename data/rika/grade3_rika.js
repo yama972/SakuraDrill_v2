@@ -366,6 +366,7 @@ const grade3RikaQuestions = [
     type: "earthscience",
     q: "太陽を観察するとき、目をいためないために使う道具は何？",
     a: "しゃ光板",
+    answers: ["しゃ光板", "遮光板"],
     memo: "太陽を直接見ると目をいためるため、しゃ光板を使って観察します。"
   },
   {
