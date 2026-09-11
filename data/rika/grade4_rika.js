@@ -440,6 +440,7 @@ const grade4RikaQuestions = [
     type: "earthscience",
     q: "液体の水が気体に変化することを何という？",
     a: "蒸発",
+    answers: ["蒸発", "気化"],
     memo: "水が液体から気体（水蒸気）に変わることを蒸発といいます。"
   },
   {
