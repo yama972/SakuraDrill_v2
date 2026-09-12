@@ -80,6 +80,12 @@ button {
     transform: translateY(-50%);
     width: 44px;
     height: 44px;
+    /* 🌸 バグ修正：button{min-height:60px}という汎用ルールが
+       タブレット・スマホ幅で効いてしまい、指定したheightより
+       ボタンが大きくなってしまうため、min-height/min-widthを
+       ここで打ち消しておく */
+    min-height: 0;
+    min-width: 0;
     border: none;
     border-radius: 10px;
     background: white;
@@ -2991,4 +2997,41 @@ button {
     font-size: 18px;
     margin-top: 10px;
     min-height: 24px;
+}
+
+/* ==========================================
+   🌸 スマホ対応（利用者ボタン）
+========================================== */
+
+@media (max-width:600px){
+
+    /* 🌸 バグ修正：✏️・🗑️ボタンを名前ボタンの右へ「はみ出す」形で
+       絶対配置していたが、画面がせまいスマホでは画面の外に出てしまい
+       押せなくなっていた（タブレット・パソコンでは今まで通り、
+       「新しく追加」ボタンと中心がそろう表示のままにする）。
+       スマホでは名前ボタンを少し小さくして、✏️・🗑️を横に並べる
+       ふつうの並び方に戻し、画面内に収まって押せることを優先する。 */
+    .mainBtn {
+        width: 200px;
+    }
+
+    .userRow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .userActionBtn {
+        position: static;
+        transform: none;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .userActionBtn:active {
+        transform: scale(0.92);
+    }
+
 }
