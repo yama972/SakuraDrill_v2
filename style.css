@@ -60,6 +60,41 @@ button {
     background: #f0f8ff;
 }
 
+/* 🌸 バグ修正：iPadなどのタッチ端末には右クリック・ダブルクリックが
+   無く、利用者名の削除・名前変更が今まで一切できなかったため、
+   タップできる✏️（名前変更）・🗑️（削除）ボタンを
+   利用者ボタンの横に並べて表示する */
+.userRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.userRow .mainBtn {
+    flex: 1 1 auto;
+}
+
+.userActionBtn {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.userActionBtn:hover {
+    background: #f0f8ff;
+}
+
+.userActionBtn:active {
+    transform: scale(0.92);
+}
+
 /* 🌸 追加ボタン */
 .homeActions {
     margin-top: 20px;
@@ -1487,6 +1522,20 @@ button {
         font-size:24px;
 
         border-radius:18px;
+
+    }
+
+    /* 🌸 iPadなど指でタップする端末では、削除・名前変更ボタンも
+       押しやすいよう少し大きくする */
+    .userActionBtn {
+
+        width: 56px;
+
+        height: 56px;
+
+        font-size: 26px;
+
+        border-radius: 14px;
 
     }
 

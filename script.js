@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.47 Stable_09_12";
+const APP_VERSION = "v7.48 Stable_09_12";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -1384,20 +1384,65 @@ function attachUserActions() {
     const area = document.getElementById("userListArea");
     if (!area) return;
 
-    const buttons = area.querySelectorAll("button");
+    // 🌸 バグ修正：iPadなどのタッチ端末には右クリック・ダブルクリックが
+    // 無いため、削除・名前変更が今まで一切できなかった（パソコンでしか
+    // 使えない操作だけに頼っていたため）。ボタンをタップするだけでも
+    // 削除・名前変更ができるように、小さな✏️・🗑️ボタンを
+    // 利用者ボタンの横に並べて表示する
+    // （右クリック・ダブルクリックはパソコンでは今まで通り使える）。
+    const buttons = area.querySelectorAll("button.mainBtn");
 
     buttons.forEach((btn, index) => {
 
-        // 右クリックで削除
+        // 右クリックで削除（パソコン向け）
         btn.oncontextmenu = function (e) {
             e.preventDefault();
             deleteUser(index);
         };
 
-        // ダブルクリックで名前変更
+        // ダブルクリックで名前変更（パソコン向け）
         btn.ondblclick = function () {
             renameUser(index);
         };
+
+        // 🌸 すでに行を組み立て済みなら、renderUserListが再度
+        // 呼ばれても二重に包まないようにする
+        if (
+            btn.parentElement &&
+            btn.parentElement.classList.contains("userRow")
+        ) {
+            return;
+        }
+
+        const row = document.createElement("div");
+        row.className = "userRow";
+
+        btn.parentElement.insertBefore(row, btn);
+        row.appendChild(btn);
+
+        const renameBtn = document.createElement("button");
+        renameBtn.type = "button";
+        renameBtn.className = "userActionBtn userRenameBtn";
+        renameBtn.innerHTML = "✏️";
+
+        renameBtn.onclick = function (e) {
+            e.stopPropagation();
+            renameUser(index);
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "userActionBtn userDeleteBtn";
+        deleteBtn.innerHTML = "🗑️";
+
+        deleteBtn.onclick = function (e) {
+            e.stopPropagation();
+            deleteUser(index);
+        };
+
+        row.appendChild(renameBtn);
+        row.appendChild(deleteBtn);
+
     });
 }
 
