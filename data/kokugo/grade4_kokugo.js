@@ -1909,8 +1909,8 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「無」の読み方をひらがなで書きましょう。",
-    a: "ない",
-    memo: "「無」は「ない」と読みます。"
+    a: "な（い）",
+    memo: "「無」は「な（い）」と読みます。"
   },
   {
     grade: 4,
@@ -1973,8 +1973,8 @@ const grade4KokugoQuestions = [
     unit: "漢字の読み（4年生）",
     type: "kanjiReading",
     q: "「良」の読み方をひらがなで書きましょう。",
-    a: "よい",
-    memo: "「良」は「よい」と読みます。"
+    a: "よ（い）",
+    memo: "「良」は「よ（い）」と読みます。"
   },
   {
     grade: 4,
