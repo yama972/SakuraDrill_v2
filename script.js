@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.45 Stable_09_12";
+const APP_VERSION = "v7.46 Stable_09_12";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -8285,10 +8285,39 @@ function buildHissanRowBox(aStr, bStr, opSymbol, answerStr) {
 
     };
 
+    // 🌸 くり上がり（繰り上げ）を書き込める小さな欄：
+    // 一の位から十の位へ…のように、上の位へくり上がった「1」を
+    // メモしておける欄を、上の式のさらに上に用意する。
+    // 対象は整数のたし算だけ（ひき算・かけ算・小数のたし算は今まで通り）。
+    // 採点はされない、自由に書き込むだけの下書き欄。
+    const carryRow = () => {
+
+        if (opSymbol !== "＋" || hasDot) {
+            return "";
+        }
+
+        let html = `<span class="hissanCarryCell"></span>`;
+
+        for (let p = 0; p < maxIntLen; p++) {
+
+            // 🌸 一の位（いちばん右）にはくり上がりが入ってこないので、
+            // 書き込めない空のマスのままにする
+            html +=
+                p === maxIntLen - 1
+                    ? `<span class="hissanCarryCell"></span>`
+                    : `<input type="text" inputmode="numeric" maxlength="1" class="hissanCarryBox" autocomplete="off">`;
+
+        }
+
+        return html;
+
+    };
+
     const totalCols = maxIntLen + (hasDot ? 1 : 0) + maxFracLen;
 
     return `
         <div class="hissanWorksheet" style="grid-template-columns: 34px repeat(${totalCols}, 42px);">
+            ${carryRow()}
             ${givenRow(aP, `<span class="hissanOp">&nbsp;</span>`)}
             ${opSymbol === "×"
                 ? givenRowFlushRight(bP, `<span class="hissanOp">${opSymbol}</span>`)
@@ -8867,6 +8896,31 @@ function wireHissanAnswerBoxes() {
 
         scratchInput.addEventListener("focus", () => {
             mathKeypadFocusedEl = scratchInput;
+        });
+
+    });
+
+    // 🌸 くり上がり（繰り上げ）を書き込める小さな欄：
+    // 採点はされない自由記入のメモ欄なので、.hissanAnswerBox のような
+    // 次のマスへの自動送りは不要。タップしたらテンキーの
+    // 書き込み先になるようにするのと、1文字だけ書けば十分なので
+    // （くり上がりは必ず1けたの「1」のため）数字を1文字に整える。
+    const carryBoxes = Array.from(
+        document.querySelectorAll(".hissanCarryBox")
+    );
+
+    carryBoxes.forEach((carryBox) => {
+
+        carryBox.addEventListener("focus", () => {
+            mathKeypadFocusedEl = carryBox;
+        });
+
+        carryBox.addEventListener("input", () => {
+
+            carryBox.value = carryBox.value
+                .replace(/[^0-9]/g, "")
+                .slice(-1);
+
         });
 
     });

@@ -265,6 +265,40 @@ button {
     background: #ffffff;
 }
 
+/* 🌸 くり上がり（繰り上げ）を書き込める小さな欄：
+   上の式のさらに上に、小さく控えめに配置する。
+   採点はされない、自由に書き込むだけの下書き欄。 */
+.hissanCarryCell {
+    width: 100%;
+    height: 26px;
+}
+
+.hissanCarryBox {
+    width: 26px;
+    height: 26px;
+    justify-self: center;
+    align-self: end;
+    margin-bottom: 2px;
+    text-align: center;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    color: #999;
+    border: 1.5px dashed #cbb7a3;
+    border-radius: 6px;
+    background: #fffdf5;
+    box-sizing: border-box;
+    padding: 0;
+}
+
+.hissanCarryBox:focus {
+    outline: none;
+    color: #29B6D8;
+    border-color: #29B6D8;
+    border-style: solid;
+    background: #ffffff;
+}
+
 /* 🌸 わり算の筆算（建て式）
    わる数（divisor）は、建て式の中の一番上の段（わられる数）と
    高さがそろうように、上そろえにする（下の「ひく数・あまり」の
