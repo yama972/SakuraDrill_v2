@@ -63,19 +63,21 @@ button {
 /* 🌸 バグ修正：iPadなどのタッチ端末には右クリック・ダブルクリックが
    無く、利用者名の削除・名前変更が今まで一切できなかったため、
    タップできる✏️（名前変更）・🗑️（削除）ボタンを
-   利用者ボタンの横に並べて表示する */
+   利用者ボタンの横に表示する。
+   🌸 バグ修正：✏️・🗑️ボタンをふつうに横並び（flex）にすると、
+   その分ぶん行全体の幅が広がり、.userGrid の中央ぞろえによって
+   名前ボタン自体が「新しく追加」ボタンより左へずれて見えてしまう。
+   ✏️・🗑️は名前ボタンの右側に絶対配置ではみ出させる形にして、
+   中央ぞろえの基準を名前ボタン（.mainBtn）だけの幅のままにする。 */
 .userRow {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.userRow .mainBtn {
-    flex: 1 1 auto;
+    position: relative;
+    display: inline-block;
 }
 
 .userActionBtn {
-    flex-shrink: 0;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     width: 44px;
     height: 44px;
     border: none;
@@ -87,12 +89,20 @@ button {
     transition: 0.15s;
 }
 
+.userRenameBtn {
+    left: calc(100% + 8px);
+}
+
+.userDeleteBtn {
+    left: calc(100% + 60px);
+}
+
 .userActionBtn:hover {
     background: #f0f8ff;
 }
 
 .userActionBtn:active {
-    transform: scale(0.92);
+    transform: translateY(-50%) scale(0.92);
 }
 
 /* 🌸 追加ボタン */
@@ -1526,7 +1536,8 @@ button {
     }
 
     /* 🌸 iPadなど指でタップする端末では、削除・名前変更ボタンも
-       押しやすいよう少し大きくする */
+       押しやすいよう少し大きくする（ボタンが大きくなる分、
+       右へのはみ出し位置＝leftの計算値も合わせてずらす） */
     .userActionBtn {
 
         width: 56px;
@@ -1536,6 +1547,18 @@ button {
         font-size: 26px;
 
         border-radius: 14px;
+
+    }
+
+    .userRenameBtn {
+
+        left: calc(100% + 8px);
+
+    }
+
+    .userDeleteBtn {
+
+        left: calc(100% + 72px);
 
     }
 
