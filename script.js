@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.46 Stable_09_12";
+const APP_VERSION = "v7.47 Stable_09_12";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -8286,26 +8286,50 @@ function buildHissanRowBox(aStr, bStr, opSymbol, answerStr) {
     };
 
     // 🌸 くり上がり（繰り上げ）を書き込める小さな欄：
-    // 一の位から十の位へ…のように、上の位へくり上がった「1」を
-    // メモしておける欄を、上の式のさらに上に用意する。
-    // 対象は整数のたし算だけ（ひき算・かけ算・小数のたし算は今まで通り）。
-    // 採点はされない、自由に書き込むだけの下書き欄。
+    // 下の位から上の位へ…のように、くり上がった数をメモしておける欄を、
+    // 上の式のさらに上に用意する。対象はたし算・かけ算（ひき算の
+    // 繰り下がりは、書き方の決まりが違うので今まで通り対象外）。
+    // 実際の計算は、小数点があっても小数点を無視して「いちばん右の桁」
+    // から順に1桁ずつ進める（かけ算のコメント参照）ため、くり上がりの
+    // 欄も、整数部・小数部をまたいで「いちばん右の桁」以外の
+    // すべての桁の上に用意する。採点はされない、自由に書き込むだけの
+    // 下書き欄。
     const carryRow = () => {
 
-        if (opSymbol !== "＋" || hasDot) {
+        if (opSymbol !== "＋" && opSymbol !== "×") {
             return "";
         }
+
+        const carryCellHTML = (isRightmostOverall) =>
+            isRightmostOverall
+                ? `<span class="hissanCarryCell"></span>`
+                : `<input type="text" inputmode="numeric" maxlength="1" class="hissanCarryBox" autocomplete="off">`;
 
         let html = `<span class="hissanCarryCell"></span>`;
 
         for (let p = 0; p < maxIntLen; p++) {
 
-            // 🌸 一の位（いちばん右）にはくり上がりが入ってこないので、
-            // 書き込めない空のマスのままにする
-            html +=
-                p === maxIntLen - 1
-                    ? `<span class="hissanCarryCell"></span>`
-                    : `<input type="text" inputmode="numeric" maxlength="1" class="hissanCarryBox" autocomplete="off">`;
+            // 🌸 小数部がなければ、整数部の一の位（いちばん右）が
+            // 全体でいちばん右の桁になる
+            const isRightmostOverall = !hasDot && (p === maxIntLen - 1);
+
+            html += carryCellHTML(isRightmostOverall);
+
+        }
+
+        if (hasDot) {
+
+            html += `<span class="hissanCarryCell"></span>`;
+
+            for (let p = 0; p < maxFracLen; p++) {
+
+                // 🌸 小数部があれば、その最後の桁（いちばん右）が
+                // 全体でいちばん右の桁になる
+                const isRightmostOverall = p === maxFracLen - 1;
+
+                html += carryCellHTML(isRightmostOverall);
+
+            }
 
         }
 
