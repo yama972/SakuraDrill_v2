@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.44 Stable_09_11";
+const APP_VERSION = "v7.45 Stable_09_12";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -6371,6 +6371,22 @@ function tryBuildHissan(question) {
 
         }
 
+        // 🌸 乗法公式の展開（例：「(x-5)² を展開すると？」
+        // 「(x+2)(x+3) を展開すると？」）：分配法則でバラした
+        // 途中式を参考として表示し、自由に書き込める欄を用意する
+        const expansionHTML =
+            buildHissanExpansionBox(question);
+
+        if (expansionHTML) {
+
+            return {
+                html: expansionHTML,
+                suffix: "",
+                answerBoxes: true
+            };
+
+        }
+
         return null;
     }
 
@@ -7847,6 +7863,163 @@ function buildHissanCombineLikeTermsBox(question) {
 }
 
 
+// 🌸 乗法公式の展開(例:「(x-5)² を展開すると？」「(x+2)(x+3) を展開すると？」)
+// のための、分配法則の途中式を参考表示し、自由に書き込める欄を用意する機能。
+
+// かっこの中身(例:「x+3」「x-5」「a+b」)を解析する
+function parseHissanExpansionBracket(str) {
+    const m = str.match(/^([a-zA-Z])([+-])([a-zA-Z0-9]+)$/);
+    if (!m) return null;
+    const isNum = /^\d+$/.test(m[3]);
+    return {
+        varLetter: m[1],
+        sign: m[2] === "-" ? -1 : 1,
+        term: m[3],
+        isNum,
+        num: isNum ? parseInt(m[3], 10) : null
+    };
+}
+
+// 1つの多項式の項(例:「5x」「2ab」「x²」「-16」)を、
+// varValues(文字→数値)を使って数値に評価する
+function evalHissanPolyTerm(term, varValues) {
+    const m = term.match(/^([+-]?)(\d*)((?:[a-zA-Z]²?)*)$/);
+    if (!m) return null;
+    const sign = m[1] === "-" ? -1 : 1;
+    const coeffStr = m[2];
+    const lettersPart = m[3];
+    let coeff = coeffStr === "" ? 1 : parseInt(coeffStr, 10);
+    if (isNaN(coeff)) return null;
+
+    const letterTokens = lettersPart.match(/[a-zA-Z]²?/g) || [];
+    let value = coeff;
+    for (const tok of letterTokens) {
+        const letter = tok[0];
+        const squared = tok.length > 1; // ² 付き
+        if (!(letter in varValues)) return null;
+        const v = varValues[letter];
+        value *= squared ? v * v : v;
+    }
+    return sign * value;
+}
+
+// 展開後の式全体(例:「x²+2x-8」)を、項ごとに分けて合計する
+function evalHissanPolyExpr(expr, varValues) {
+    const compact = String(expr).replace(/\s+/g, "");
+    const terms = compact.match(/[+-]?[^+-]+/g);
+    if (!terms) return null;
+    let total = 0;
+    for (const t of terms) {
+        const v = evalHissanPolyTerm(t, varValues);
+        if (v === null) return null;
+        total += v;
+    }
+    return total;
+}
+
+function hissanExpansionTermDisplay(sign, term, isNum, withVar) {
+    const signText = sign < 0 ? "-" : "+";
+    if (withVar) {
+        return isNum ? `${signText}${term}${withVar}` : `${signText}${withVar}${term}`;
+    }
+    return `${signText}${term}`;
+}
+
+// 分配法則でバラした(まだ同類項をまとめていない)表示文字列を作る
+// 例:(x-5)(x-5) → "x²-5x-5x+25"、(a+b)(a+b) → "a²+ab+ab+b²"
+function buildHissanExpansionTerms(b1, b2, V) {
+    const first = `${V}²`;
+    const outer = hissanExpansionTermDisplay(b2.sign, b2.term, b2.isNum, V);   // V × b2
+    const inner = hissanExpansionTermDisplay(b1.sign, b1.term, b1.isNum, V);   // b1 × V
+    const lastSign = b1.sign * b2.sign;
+    let lastMag;
+    if (b1.isNum && b2.isNum) {
+        lastMag = String(b1.num * b2.num);
+    } else if (!b1.isNum && !b2.isNum && b1.term === b2.term) {
+        lastMag = `${b1.term}²`;
+    } else if (!b1.isNum && !b2.isNum) {
+        lastMag = `${b1.term}${b2.term}`;
+    } else {
+        lastMag = `${b1.term}${b2.term}`;
+    }
+    const last = `${lastSign < 0 ? "-" : "+"}${lastMag}`;
+
+    return `${first}${outer}${inner}${last}`;
+}
+
+// 「(x-5)² を展開すると？」「(x+2)(x+3) を展開すると？」の形式に一致するか判定し、
+// 一致すればFOIL展開の参考表示＋自由記入の下書き欄を返す。
+// 対応外のパターン(3乗、単純な分配など)は null を返し、今まで通りキーパッド直接入力にする。
+function buildHissanExpansionBox(question) {
+
+    const raw = String(question.q).replace(/\s+/g, "");
+
+    let b1 = null, b2 = null;
+
+    const mSquare = raw.match(/^\((.+)\)²を展開すると[？?]$/);
+    if (mSquare) {
+        const b = parseHissanExpansionBracket(mSquare[1]);
+        if (!b) return null;
+        b1 = b;
+        b2 = b;
+    } else {
+        const mProduct = raw.match(/^\((.+?)\)\((.+?)\)を展開すると[？?]$/);
+        if (!mProduct) return null;
+        b1 = parseHissanExpansionBracket(mProduct[1]);
+        b2 = parseHissanExpansionBracket(mProduct[2]);
+        if (!b1 || !b2) return null;
+        if (b1.varLetter !== b2.varLetter) return null;
+    }
+
+    const V = b1.varLetter;
+
+    // 🌸 念のための安全確認:適当な数値を代入して、
+    // 実際に格納されている正解(question.a)と数値的に一致するかを確認する。
+    // 一致しなければ、想定外のパターンとして null を返す(キーパッド直接入力に戻す)。
+    const varValues = {};
+    varValues[V] = 7;
+    let nextLetterVal = 3;
+    [b1, b2].forEach(b => {
+        if (!b.isNum && !(b.term in varValues)) {
+            varValues[b.term] = nextLetterVal++;
+        }
+    });
+
+    const v1 = b1.isNum ? b1.num : varValues[b1.term];
+    const v2 = b2.isNum ? b2.num : varValues[b2.term];
+
+    const originalValue =
+        (varValues[V] + b1.sign * v1) * (varValues[V] + b2.sign * v2);
+
+    const answerValue = evalHissanPolyExpr(question.a, varValues);
+
+    if (originalValue !== answerValue) {
+        return null;
+    }
+
+    const distributedText = buildHissanExpansionTerms(b1, b2, V);
+
+    return `
+        <div class="hissanEquationPanel">
+            <div class="hissanEquationStep">
+                <div class="hissanEquationStepLabel">① 分配法則で展開する</div>
+                <div class="hissanEquationRow">
+                    <span>＝${distributedText}</span>
+                </div>
+            </div>
+            <div class="hissanEquationStep">
+                <div class="hissanEquationStepLabel">② 同類項をまとめて書いてみよう(採点はされません)</div>
+                <div class="hissanEquationRow">
+                    <span>＝</span>
+                    <input type="text" inputmode="text" class="hissanExpansionScratchInput" autocomplete="off">
+                </div>
+            </div>
+        </div>
+    `;
+
+}
+
+
 // 🌸 分数のかけ算：分子どうし・分母どうしをそれぞれかけ算として書き込み、
 // できた分数（約分前）を、さらに約分した最終的な答えへつなげる。
 // 「算数方式」と同じく、答えは1桁ずつのマスに分けて書き込む
@@ -8681,6 +8854,22 @@ function wireHissanAnswerBoxes() {
     if (firstBox) {
         firstBox.focus();
     }
+
+    // 🌸 乗法公式の展開スクラッチ欄（自由記入・採点なし）：
+    // タップしたらそこへテンキーで書き込めるようにする。
+    // マス目とちがい1文字ずつの自動送りは不要なので、
+    // フォーカスの切り替えだけ用意すればよい。
+    const scratchInputs = Array.from(
+        document.querySelectorAll(".hissanExpansionScratchInput")
+    );
+
+    scratchInputs.forEach((scratchInput) => {
+
+        scratchInput.addEventListener("focus", () => {
+            mathKeypadFocusedEl = scratchInput;
+        });
+
+    });
 
 }
 

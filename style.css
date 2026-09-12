@@ -437,6 +437,28 @@ button {
     gap: 3px;
 }
 
+/* 🌸 乗法公式の展開：同類項をまとめた式を自由に書き込める欄
+   （マス目ではなく1つの入力欄。採点はされない下書きスペース） */
+.hissanExpansionScratchInput {
+    min-width: 160px;
+    height: 40px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 22px;
+    font-weight: bold;
+    color: #29B6D8;
+    border: 2px solid #cbb7a3;
+    border-radius: 8px;
+    background: #fffdf5;
+    box-sizing: border-box;
+    padding: 4px 10px;
+}
+
+.hissanExpansionScratchInput:focus {
+    outline: none;
+    border-color: #29B6D8;
+    background: #ffffff;
+}
+
 /* 🌸 立体の体積の筆算：「たて×よこ」→「×高さ」のように、
    1段階ずつのかけ算・わり算の筆算を、段（①②③）ごとに
    分けて縦に並べて表示する。 */
