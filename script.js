@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.49 Stable_09_13";
+const APP_VERSION = "v7.50 Stable_09_13";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -757,10 +757,28 @@ let challengeCount = 10;
 let challengeCourse = "";
 
 /* =========================
-🔒 管理者パスワード
+🔒 管理者の暗証番号
+🌸 はじめは「1234」だが、管理画面の中から
+🌸 自由に変更できる（変更した番号はこの端末の
+🌸 localStorageに保存され、次回からはその番号を使う）。
 ========================= */
 
-const ADMIN_PASSWORD = "7146";
+const ADMIN_PASSWORD_DEFAULT = "1234";
+const ADMIN_PASSWORD_KEY = "adminPassword";
+
+function getAdminPassword() {
+
+    const saved = localStorage.getItem(ADMIN_PASSWORD_KEY);
+
+    return (saved && saved.trim() !== "") ? saved : ADMIN_PASSWORD_DEFAULT;
+
+}
+
+function setAdminPassword(newPassword) {
+
+    localStorage.setItem(ADMIN_PASSWORD_KEY, newPassword);
+
+}
 
 /////////////////////////////////////////////////////
 // 🌸 Engine13 共通クイズ初期化
@@ -1197,15 +1215,15 @@ function resetAllPoints() {
 
 function showPointManager() {
 
-    const password = prompt("🔒 管理者パスワードを入力してください");
+    const password = prompt("🔒 管理者の暗証番号を入力してください");
 
     if (password === null) {
         return;
     }
 
-    if (password !== ADMIN_PASSWORD) {
+    if (password !== getAdminPassword()) {
 
-        alert("❌ パスワードが違います。");
+        alert("❌ 暗証番号が違います。");
 
         return;
 
@@ -1220,6 +1238,48 @@ function showPointManager() {
     adminArea.style.display = "block";
 
     updatePointManager();
+
+}
+
+/* =========================
+   🌸 管理者の暗証番号を変更
+========================= */
+
+function changeAdminPassword() {
+
+    const current =
+        prompt("🔒 今の暗証番号を入力してください");
+
+    if (current === null) {
+        return;
+    }
+
+    if (current !== getAdminPassword()) {
+
+        alert("❌ 暗証番号が違います。");
+
+        return;
+
+    }
+
+    const next =
+        prompt("🔒 新しい暗証番号を入力してください");
+
+    if (next === null) {
+        return;
+    }
+
+    if (next.trim() === "") {
+
+        alert("⚠ 暗証番号を入力してください。");
+
+        return;
+
+    }
+
+    setAdminPassword(next.trim());
+
+    alert("🌸 暗証番号を変更しました。次からは新しい番号を使ってください。");
 
 }
 
