@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.50 Stable_09_13";
+const APP_VERSION = "v7.51 Stable_09_13";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -1215,7 +1215,22 @@ function resetAllPoints() {
 
 function showPointManager() {
 
-    const password = prompt("🔒 管理者の暗証番号を入力してください");
+    // 🌸 まだ一度も暗証番号を変更していない（初期設定のまま）ときだけ、
+    // 🌸 「はじめは1234です」というヒントを入力欄に表示しておく。
+    // 🌸 一度でも変更したら、もうヒントは出さない
+    // 🌸 （変更後の番号を表示してしまわないようにするため）。
+    const savedPassword =
+        localStorage.getItem(ADMIN_PASSWORD_KEY);
+
+    const isDefaultPassword =
+        !savedPassword || savedPassword.trim() === "";
+
+    const promptText =
+        isDefaultPassword
+            ? "🔒 管理者の暗証番号を入力してください（はじめは 1234 です）"
+            : "🔒 管理者の暗証番号を入力してください";
+
+    const password = prompt(promptText);
 
     if (password === null) {
         return;
