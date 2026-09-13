@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.48 Stable_09_12";
+const APP_VERSION = "v7.49 Stable_09_13";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -4700,7 +4700,10 @@ function kokugoScoreTraceAttempt() {
 
     kokugoTracePoints = [];
 
-    playSound("correct");
+    // 🌸 バグ修正：以前はここで画（1ストローク）ごとに正解音を鳴らして
+    // 🌸 いたが、鳴ったり鳴らなかったりして分かりにくいという声があったため、
+    // 🌸 画ごとの音は鳴らさず、1文字ぶん書き終えたとき（kokugoTraceFinishCharacter内）
+    // 🌸 の1回だけ鳴らすようにする。
 
     // 🌸 なぞった画が「とめ・はね・はらい」のどれだったかを
     // 🌸 進み具合と一緒に、ことばでも見せる
