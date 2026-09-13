@@ -247,6 +247,12 @@ const chu2RikaQuestions = [
     type: "chemistry",
     q: "水の電気分解の化学反応式は？",
     a: "2H₂O → 2H₂ + O₂",
+    answers: [
+        "2H₂O → 2H₂ + O₂",
+        "2H2O → 2H2 + O2",
+        "2H2O->2H2+O2",
+        "2H₂O→2H₂+O₂"
+    ],
     memo: "水は水素と酸素に分解されます。"
   },
   {

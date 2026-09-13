@@ -6,6 +6,7 @@ const grade3RikaQuestions = [
     type: "biology",
     q: "こん虫のからだは、頭・胸・腹の何つに分かれている？",
     a: "3つ",
+    answers: ["3つ", "3", "三つ"],
     memo: "こん虫のからだは頭・胸・腹の3つの部分に分かれています。"
   },
   {
@@ -14,6 +15,7 @@ const grade3RikaQuestions = [
     type: "biology",
     q: "こん虫のあしは全部で何本？",
     a: "6本",
+    answers: ["6本", "6", "六本"],
     memo: "こん虫のあしは6本あり、すべて胸から生えています。"
   },
   {

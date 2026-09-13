@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.51 Stable_09_13";
+const APP_VERSION = "v7.52 Stable_09_13";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -16729,9 +16729,20 @@ function coreFuzzyMatch(userAnswer, correctText) {
 
 function isFuzzyTextMatch(userAnswer, correctAnswer) {
 
+    // 🌸 括弧つきの別解（例：「五・七・五（17音）」の「17音」、
+    // 「0（最小）」の「0」）は、答えに数字が入っていても
+    // 常に展開する。これは「言葉の言い回しのゆれ」ではなく、
+    // 「（）の中は別解として認める」という構造上のお約束なので、
+    // 数字の有無に関係なく効かせる必要がある。
+    const variants =
+        extractAnswerVariants(correctAnswer);
+
     // 🌸 数字・比（3:4）・分数（4/5）・単位付き数値（1m10cm）など
-    // 「構造がきっちり決まった答え」には揺らぎ判定を使わない。
-    // 漢字・ひらがなだけの、文章としての答えのときだけ使う。
+    // 「構造がきっちり決まった答え」には、下のcoreFuzzyMatchのような
+    // 「前方一致・読み替え」のゆるい判定は使わない（例：正解「100」に
+    // 対してユーザーの「10」を誤って正解にしてしまう恐れがあるため）。
+    // その代わり、括弧の展開はそのままに、前後の空白や全角・半角の
+    // ゆれだけを吸収した「完全一致」で比べる。
     if (
         typeof correctAnswer === "number" ||
         /[0-9０-９:：/／]/.test(
@@ -16739,15 +16750,16 @@ function isFuzzyTextMatch(userAnswer, correctAnswer) {
         )
     ) {
 
-        return false;
+        return variants.some(
+            variant =>
+                normalizeForFuzzyMatch(userAnswer) ===
+                normalizeForFuzzyMatch(variant)
+        );
 
     }
 
     // 🌸 括弧つきの別解（例：「つぶが大きい土（すな）」の「すな」）も
     // 候補として展開し、いずれかに一致すれば正解とする
-    const variants =
-        extractAnswerVariants(correctAnswer);
-
     return variants.some(
         variant => coreFuzzyMatch(userAnswer, variant)
     );
