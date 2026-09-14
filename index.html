@@ -12,7 +12,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <link rel="stylesheet" href="style.css?v=20260912-13">
+    <link rel="stylesheet" href="style.css?v=20260912-14">
 
     <title>SakuraDrill</title>
 
@@ -21,7 +21,7 @@
          新しいバージョンが公開されていたら自動的に読み込み直す。
          ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
     <script>
-        window.SAKURA_BUILD = "20260912-13";
+        window.SAKURA_BUILD = "20260912-14";
         (function () {
             fetch("version.txt", { cache: "no-store" })
                 .then(function (res) { return res.text(); })
@@ -53,6 +53,22 @@
                     // 🌸 オフラインなどで確認できない時は、そのまま今の画面を使う
                 });
         })();
+    </script>
+
+    <!-- 🌸 オフライン対応（Service Worker）
+         電波が届かない場所でも一時的に開けるように、必要なファイルを
+         この端末に保存しておく。オンラインの間は今まで通り最新の
+         内容が表示され、つながらない時だけ保存分を使う。 -->
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+                navigator.serviceWorker
+                    .register("sw.js")
+                    .catch(function (err) {
+                        console.log("🌸 オフライン機能の準備に失敗:", err);
+                    });
+            });
+        }
     </script>
 </head>
 
@@ -1821,7 +1837,7 @@
                         <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
-                        <script src="script.js?v=20260912-13"></script>
+                        <script src="script.js?v=20260912-14"></script>
 
 
                         
