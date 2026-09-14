@@ -12,7 +12,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <link rel="stylesheet" href="style.css?v=20260912-12">
+    <link rel="stylesheet" href="style.css?v=20260912-13">
 
     <title>SakuraDrill</title>
 
@@ -21,7 +21,7 @@
          新しいバージョンが公開されていたら自動的に読み込み直す。
          ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
     <script>
-        window.SAKURA_BUILD = "20260912-12";
+        window.SAKURA_BUILD = "20260912-13";
         (function () {
             fetch("version.txt", { cache: "no-store" })
                 .then(function (res) { return res.text(); })
@@ -419,6 +419,38 @@
     <button class="menuBtn" onclick="changeAdminPassword()">
         🔒 暗証番号を変更
     </button>
+
+    <br><br>
+
+    <hr>
+
+    <h3 class="challengeTitle">
+        📦 データのバックアップ
+    </h3>
+
+    <p style="font-size:14px; line-height:1.6;">
+        利用者・Sakura Point・学習記録などを、この端末の外に
+        ファイルとして保存したり、保存しておいたファイルから
+        読み込んだりできます。機種変更やトラブルに備えて、
+        ときどき保存しておくと安心です。
+    </p>
+
+    <button class="menuBtn" onclick="exportBackup()">
+        📦 バックアップを保存
+    </button>
+
+    <br><br>
+
+    <button class="menuBtn" onclick="triggerImportBackup()">
+        📂 バックアップを読み込む
+    </button>
+
+    <input
+        type="file"
+        id="backupFileInput"
+        accept="application/json"
+        style="display:none;"
+        onchange="importBackupFromFile(this)">
 
     <br><br>
 
@@ -1789,7 +1821,7 @@
                         <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
-                        <script src="script.js?v=20260912-12"></script>
+                        <script src="script.js?v=20260912-13"></script>
 
 
                         

@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.52 Stable_09_13";
+const APP_VERSION = "v7.53 Stable_09_14";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
@@ -1295,6 +1295,159 @@ function changeAdminPassword() {
     setAdminPassword(next.trim());
 
     alert("🌸 暗証番号を変更しました。次からは新しい番号を使ってください。");
+
+}
+
+/* =========================
+   🌸 データのバックアップ（書き出し・読み込み）
+   🌸 利用者・Sakura Point・学習記録・暗証番号など、この端末の
+   🌸 localStorageだけに保存されているデータをファイルに書き出したり、
+   🌸 そのファイルから読み込んで元に戻したりできるようにする。
+   🌸 （タブレットの機種変更やトラブルでデータが消えてしまったときの
+   🌸 備え。他の端末には自動で反映されないので、必要ならその端末でも
+   🌸 このファイルを読み込む。）
+========================= */
+
+// 🌸 バックアップの対象にするlocalStorageのキーを集める。
+// 🌸 「users」「weak」「log」「暗証番号」に加えて、利用者ごと・
+// 🌸 日付ごとに増えていく学習記録（sakuraStudyRecord_名前_日付）も
+// 🌸 すべて対象にする。
+function collectBackupKeys() {
+
+    const fixedKeys = ["users", "weak", "log", ADMIN_PASSWORD_KEY];
+
+    const studyRecordKeys = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+
+        const key = localStorage.key(i);
+
+        if (key && key.startsWith("sakuraStudyRecord_")) {
+            studyRecordKeys.push(key);
+        }
+
+    }
+
+    return fixedKeys.concat(studyRecordKeys);
+
+}
+
+function exportBackup() {
+
+    const keys = collectBackupKeys();
+
+    const data = {};
+
+    keys.forEach(key => {
+
+        const value = localStorage.getItem(key);
+
+        if (value !== null) {
+            data[key] = value;
+        }
+
+    });
+
+    const backup = {
+        app: "SakuraDrill",
+        exportedAt: new Date().toISOString(),
+        data: data
+    };
+
+    const json = JSON.stringify(backup, null, 2);
+
+    const blob = new Blob([json], { type: "application/json" });
+
+    const url = URL.createObjectURL(blob);
+
+    const today = getTodayKey();
+
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `sakuradrill_backup_${today}.json`;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+
+    alert("🌸 バックアップを保存しました。ファイルをなくさないところに保管しておいてください。");
+
+}
+
+function triggerImportBackup() {
+
+    const input = document.getElementById("backupFileInput");
+
+    if (!input) return;
+
+    // 🌸 同じファイルを続けて選んでも読み込みイベントが
+    // 🌸 ちゃんと発生するように、いったん空にしておく
+    input.value = "";
+
+    input.click();
+
+}
+
+function importBackupFromFile(fileInput) {
+
+    const file = fileInput.files && fileInput.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+
+        let backup;
+
+        try {
+
+            backup = JSON.parse(e.target.result);
+
+        } catch (err) {
+
+            alert("❌ このファイルは読み込めませんでした（バックアップファイルではないようです）。");
+
+            return;
+
+        }
+
+        if (!backup || typeof backup.data !== "object" || !backup.data) {
+
+            alert("❌ このファイルはSakuraDrillのバックアップファイルではないようです。");
+
+            return;
+
+        }
+
+        const ok = confirm(
+            "🔒 バックアップを読み込むと、今この端末にある利用者・" +
+            "Sakura Point・学習記録・暗証番号が、バックアップの中身で" +
+            "上書きされます。よろしいですか？"
+        );
+
+        if (!ok) return;
+
+        Object.keys(backup.data).forEach(key => {
+            localStorage.setItem(key, backup.data[key]);
+        });
+
+        alert("🌸 バックアップを読み込みました。ホーム画面からやり直します。");
+
+        location.reload();
+
+    };
+
+    reader.onerror = function () {
+
+        alert("❌ ファイルの読み込みに失敗しました。");
+
+    };
+
+    reader.readAsText(file);
 
 }
 
