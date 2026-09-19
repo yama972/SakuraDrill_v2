@@ -91,7 +91,7 @@ Phase1
 /////////////////////////////////////////////////////
 
 const APP_NAME = "🌸 SakuraDrill";
-const APP_VERSION = "v7.53 Stable_09_14";
+const APP_VERSION = "v7.55 Stable_09_16";
 const dailyMessages = [
     "🌸 今日も一歩ずつ進もう！",
     "😊 まちがえても大丈夫！",
