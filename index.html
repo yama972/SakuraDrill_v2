@@ -21,7 +21,7 @@
          新しいバージョンが公開されていたら自動的に読み込み直す。
          ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
     <script>
-        window.SAKURA_BUILD = "20260912-20";
+        window.SAKURA_BUILD = "20260912-21";
         (function () {
             fetch("version.txt", { cache: "no-store" })
                 .then(function (res) { return res.text(); })
@@ -400,10 +400,6 @@
 
     <button class="mainBtn" onclick="openMathChallengeCourse()">
         📐 算数チャレンジ
-    </button>
-
-    <button class="mainBtn" onclick="openSocialChallenge()">
-        🗾 社会チャレンジ
     </button>
 
     <button class="mainBtn" onclick="openJapanChallenge()">

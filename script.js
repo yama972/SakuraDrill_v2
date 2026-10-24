@@ -15697,7 +15697,7 @@ function openMathChallenge(){
 /////////////////////////////////////////////////////
 function openSocialChallenge(){
 
-    alert("🗾 社会チャレンジ\n\nPhase14-3で作成します。");
+    clearScreens(); document.getElementById("socialHome").style.display = "block";
 
 }
 
@@ -15706,7 +15706,7 @@ function openSocialChallenge(){
 /////////////////////////////////////////////////////
 function openJapanChallenge(){
 
-    alert("🌍 全国チャレンジ\n\nPhase14-3で作成します。");
+    clearScreens(); startJapanChallenge();
 
 }
 
