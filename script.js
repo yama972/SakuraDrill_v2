@@ -13568,6 +13568,17 @@ function startArea(area, card) {
             return;
         }
 
+        if (area === "nagaoka") {
+            startNagaokaExplore();
+            return;
+        }
+
+        if (area === "yahiko") {
+            startYahikoExplore();
+            return;
+        }
+
+
         const selectedArea = niigataAreas.find(a => a.id === area);
         const areaName = selectedArea ? selectedArea.name : area;
 
@@ -15495,6 +15506,42 @@ function finishSadoExplore() {
 
     // 🌸 追加
     document.getElementById("backToMapBtn").style.visibility = "visible";
+
+}
+
+/////////////////////////////////////////////////////
+// Phase5
+// 長岡市探検開始
+/////////////////////////////////////////////////////
+
+function startNagaokaExplore(){
+
+    console.log("🎆 長岡市探検スタート");
+    console.log(nagaokaQuiz[0]);
+
+    currentExploreQuiz = nagaokaQuiz;
+
+    exploreIndex = 0;
+
+    showExploreQuiz();
+
+}
+
+/////////////////////////////////////////////////////
+// Phase5
+// 弥彦村探検開始
+/////////////////////////////////////////////////////
+
+function startYahikoExplore(){
+
+    console.log("⛩️ 弥彦村探検スタート");
+    console.log(yahikoQuiz[0]);
+
+    currentExploreQuiz = yahikoQuiz;
+
+    exploreIndex = 0;
+
+    showExploreQuiz();
 
 }
 

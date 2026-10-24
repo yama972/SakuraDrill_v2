@@ -25,7 +25,7 @@
 //   　オフラインになった場合に、その教科だけ表示できません。）
 /////////////////////////////////////////////////////
 
-const CACHE_VERSION = "20260916-2";
+const CACHE_VERSION = "20260916-3";
 const CACHE_NAME = `sakuradrill-offline-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
@@ -70,6 +70,8 @@ const PRECACHE_URLS = [
     "data/math/grade6_math.js",
     "data/niigata/niigata.js",
     "data/niigata/sado.js",
+    "data/niigata/nagaoka.js",
+    "data/niigata/yahiko.js",
     "data/prefectures/aichi.js",
     "data/prefectures/akita.js",
     "data/prefectures/aomori.js",
