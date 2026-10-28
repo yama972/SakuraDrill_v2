@@ -12,7 +12,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <link rel="stylesheet" href="style.css?v=20260912-23">
+    <link rel="stylesheet" href="style.css?v=20260912-25">
 
     <title>SakuraDrill</title>
 
@@ -21,7 +21,7 @@
          新しいバージョンが公開されていたら自動的に読み込み直す。
          ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
     <script>
-        window.SAKURA_BUILD = "20260912-23";
+        window.SAKURA_BUILD = "20260912-25";
         (function () {
             fetch("version.txt", { cache: "no-store" })
                 .then(function (res) { return res.text(); })
@@ -569,7 +569,7 @@
         「挑戦するコースを選びましょう！」
     </div>
 
-    <button class="challengeCard beginnerCard"
+    <button class="challengeCard roundoffCard" onclick="startRoundoffCourse()">🔢 概数コース（集中れんしゅう）</button><button class="challengeCard beginnerCard"
             onclick="startBeginnerCourse()">
         🌱 はじめてコース（10問）
     </button>
@@ -1397,7 +1397,7 @@
     <div id="feedback"></div>
 
     <!-- 次の問題ボタン（最初は非表示） -->
-    <button id="nextBtn" style="display:none;">
+    <button type="button" class="quizBackBtn" onclick="exitQuizToChallengeHome()">← もどる</button><button id="nextBtn" style="display:none;">
         ➡️ 次の問題
     </button>
 
@@ -1802,10 +1802,10 @@
                         <script src="data/grades/grade6_social_studies.js"></script>
 
                         <!-- 🌸 算数データベース -->
-                        <script src="data/math/grade1_math.js?v=20260912-23"></script>
+                        <script src="data/math/grade1_math.js?v=20260912-25"></script>
                         <script src="data/math/grade2_math.js"></script>
                         <script src="data/math/grade3_math.js"></script>
-                        <script src="data/math/grade4_math.js?v=20260911-24"></script>
+                        <script src="data/math/grade4_math.js?v=20260911-25"></script>
                         <script src="data/math/grade5_math.js"></script>
                         <script src="data/math/grade6_math.js"></script>
                         <script src="data/math/chu1_math.js"></script>
@@ -1848,7 +1848,7 @@
                         <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
-                        <script src="script.js?v=20260912-23"></script>
+                        <script src="script.js?v=20260912-25"></script>
 
 
                         

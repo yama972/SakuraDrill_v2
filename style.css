@@ -3150,3 +3150,9 @@ button {
 .hissanTimesSign { position:relative; }
 .hissanTimesSign::before { content:"×"; position:absolute; left:-1.1em; color:#1971c2; }
 .hissanCarryCell { font-size:0.6em; color:#e8590c; align-self:end; }
+
+.challengeCard.roundoffCard {
+    background: #63e6be;
+}
+
+.quizBackBtn { background: #e9ecef; color: #495057; border: none; border-radius: 10px; padding: 12px 20px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-right: 10px; }

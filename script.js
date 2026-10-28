@@ -19763,6 +19763,75 @@ function renderHissanMulOwnInputMode(containerEl) {
     });
 }
 
+/////////////////////////////////////////////////////
+// 🌸 概数コース（がい数だけを集中的に出題）
+/////////////////////////////////////////////////////
+
+function startRoundoffCourse() {
+
+    challengeType = "math";
+    challengeCourse = "🔢 概数コース";
+
+    console.log("🏆 算数Challenge開始（概数コース）");
+
+    document.getElementById("challengeCourseArea").style.display = "none";
+
+    startRoundoffQuiz();
+
+}
+
+function startRoundoffQuiz() {
+
+    reviewMode = false;
+    reviewList = [];
+    reviewIndex = 0;
+
+    kokugoMode = false;
+    rikaMode = false;
+    englishMode = false;
+
+    resetQuizState();
+
+    currentUnit = "がい数コース";
+    questionCount = 0;
+    score = 0;
+
+    const allQuestions = getMathDatabase();
+
+    const roundoffQuestions = allQuestions.filter(
+        q => q.type === "roundoff"
+    );
+
+    console.log(
+        "🌸 概数の問題数:",
+        roundoffQuestions.length
+    );
+
+    quizState.questions =
+        shuffleArray([
+            ...roundoffQuestions
+        ]);
+
+    maxQuestions =
+        quizState.questions.length;
+
+    challengeCount = maxQuestions;
+
+    showQuestion();
+
+}
+
+/////////////////////////////////////////////////////
+// 🌸 クイズ画面から「戻る」で算数チャレンジホームへ
+/////////////////////////////////////////////////////
+
+function exitQuizToChallengeHome() {
+
+    stopStudyTimer();
+
+    backToChallengeHome();
+
+}
 
 
 ////////////////
