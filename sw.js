@@ -25,7 +25,7 @@
 //   　オフラインになった場合に、その教科だけ表示できません。）
 /////////////////////////////////////////////////////
 
-const CACHE_VERSION = "20260916-4";
+const CACHE_VERSION = "20260916-5";
 const CACHE_NAME = `sakuradrill-offline-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [

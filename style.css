@@ -3146,3 +3146,7 @@ button {
     text-align:center; color:#2b8a3e; font-weight:bold;
     margin-top:10px; font-size:1.1rem;
 }
+
+.hissanTimesSign { position:relative; }
+.hissanTimesSign::before { content:"×"; position:absolute; left:-1.1em; color:#1971c2; }
+.hissanCarryCell { font-size:0.6em; color:#e8590c; align-self:end; }

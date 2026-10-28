@@ -19379,6 +19379,391 @@ function startHissanInteractiveQuiz(containerEl, dividendStr, divisor) {
     runStep();
 }
 
+// ============================================================
+// 🌸 筆算れんしゅう：計算の種類（わり算／かけ算）の選択
+// ============================================================
+let currentHissanOperation = 'division';
+
+function openHissanChallenge(){
+    clearScreens();
+    document.getElementById("hissanArea").style.display = "block";
+    showHissanOperationSelect();
+}
+
+function showHissanOperationSelect() {
+    document.getElementById("hissanModeSelect").style.display = "none";
+    document.getElementById("hissanOwnInput").style.display = "none";
+    document.getElementById("hissanQuizMode").style.display = "none";
+    const area = document.getElementById("hissanOperationSelect");
+    area.style.display = "block";
+    renderHissanOperationSelect(area);
+}
+
+function renderHissanOperationSelect(containerEl) {
+    containerEl.innerHTML = `
+        <div class="hissanModeSelectCard">
+            <p style="font-weight:bold; margin-bottom:14px;">🧮 どのけいさんをれんしゅうする？</p>
+            <button class="hissanModeBtn hissanQuiz" id="hissanOpDivisionBtn">➗ わり算</button>
+            <button class="hissanModeBtn hissanOwn" id="hissanOpMultiplicationBtn">✖️ かけ算</button>
+        </div>`;
+
+    containerEl.querySelector('#hissanOpDivisionBtn').addEventListener('click', showHissanModeSelect);
+    containerEl.querySelector('#hissanOpMultiplicationBtn').addEventListener('click', showHissanMulModeSelect);
+}
+
+function showHissanModeSelect() {
+    currentHissanOperation = 'division';
+    document.getElementById("hissanOperationSelect").style.display = "none";
+    document.getElementById("hissanOwnInput").style.display = "none";
+    document.getElementById("hissanQuizMode").style.display = "none";
+    const area = document.getElementById("hissanModeSelect");
+    area.style.display = "block";
+    renderHissanModeSelect(area);
+    if (!area.querySelector('.hissanBackToOpLink')) {
+        const backLink = document.createElement('span');
+        backLink.className = 'hissanBackLink hissanBackToOpLink';
+        backLink.textContent = '← べつの計算にする';
+        backLink.style.display = 'block';
+        backLink.style.marginBottom = '12px';
+        backLink.style.cursor = 'pointer';
+        backLink.addEventListener('click', showHissanOperationSelect);
+        area.prepend(backLink);
+    }
+}
+
+function showHissanMulModeSelect() {
+    currentHissanOperation = 'multiplication';
+    document.getElementById("hissanOperationSelect").style.display = "none";
+    document.getElementById("hissanOwnInput").style.display = "none";
+    document.getElementById("hissanQuizMode").style.display = "none";
+    const area = document.getElementById("hissanModeSelect");
+    area.style.display = "block";
+    renderHissanMulModeSelect(area);
+}
+
+function renderHissanMulModeSelect(containerEl) {
+    containerEl.innerHTML = `
+        <span class="hissanBackLink" id="hissanMulBackToOp">← べつの計算にする</span>
+        <div class="hissanModeSelectCard">
+            <p style="font-weight:bold; margin-bottom:14px;">✖️ かけ算の筆算、どっちで練習する？</p>
+            <button class="hissanModeBtn hissanQuiz" id="hissanMulModeQuizBtn">📝 問題として出す</button>
+            <button class="hissanModeBtn hissanOwn" id="hissanMulModeOwnBtn">✏️ 自分で入力</button>
+        </div>`;
+
+    containerEl.querySelector('#hissanMulBackToOp').addEventListener('click', showHissanOperationSelect);
+
+    containerEl.querySelector('#hissanMulModeQuizBtn').addEventListener('click', () => {
+        document.getElementById("hissanModeSelect").style.display = "none";
+        const quizArea = document.getElementById("hissanQuizMode");
+        quizArea.style.display = "block";
+        renderHissanMulQuizMode(quizArea);
+    });
+    containerEl.querySelector('#hissanMulModeOwnBtn').addEventListener('click', () => {
+        document.getElementById("hissanModeSelect").style.display = "none";
+        const ownArea = document.getElementById("hissanOwnInput");
+        ownArea.style.display = "block";
+        renderHissanMulOwnInputMode(ownArea);
+    });
+}
+
+// ============================================================
+// 🌸 かけ算の筆算：計算エンジン（くり上がり対応）
+// ============================================================
+function buildMultiplicationSteps(multiplicandStr, multiplier) {
+    const digits = multiplicandStr.split('').map(Number);
+    const N = digits.length;
+    let carry = 0;
+    let steps = [];
+    for (let i = N - 1; i >= 0; i--) {
+        const isLast = (i === 0);
+        const raw = digits[i] * multiplier + carry;
+        if (isLast) {
+            steps.push({ position: i, digit: digits[i], carryIn: carry, raw, isLast: true, writeStr: String(raw) });
+            carry = 0;
+        } else {
+            const writeDigit = raw % 10;
+            const carryOut = Math.floor(raw / 10);
+            steps.push({ position: i, digit: digits[i], carryIn: carry, raw, isLast: false, writeStr: String(writeDigit), carryOut });
+            carry = carryOut;
+        }
+    }
+    const reversedForDisplay = steps.slice().reverse();
+    let col = 1;
+    reversedForDisplay.forEach(step => {
+        const len = step.writeStr.length;
+        step.colStart = col;
+        step.colEnd = col + len - 1;
+        col += len;
+    });
+    const productLength = col - 1;
+    const productStr = reversedForDisplay.map(s => s.writeStr).join('').replace(/^0+(?=\d)/, '');
+    return { steps, product: productStr || '0', productLength, multiplicandLength: N };
+}
+
+function buildHissanMulQuizGrid(multiplicandStr, multiplier, result) {
+    const N = result.multiplicandLength;
+    const P = result.productLength;
+    let gridRows = [];
+    let rowIndex = 1;
+
+    let mcRow = '';
+    const mcDigits = multiplicandStr.split('');
+    const mcOffset = P - N;
+    for (let i = 0; i < N; i++) {
+        const col = mcOffset + i + 1;
+        mcRow += `<div class="hissanCell" style="grid-column:${col}; grid-row:${rowIndex};">${mcDigits[i]}</div>`;
+    }
+    gridRows.push({ html: mcRow, height: '2.2em' });
+    rowIndex++;
+
+    let mulRow = `<div class="hissanCell hissanTimesSign" style="grid-column:${P}; grid-row:${rowIndex};">${multiplier}</div>`;
+    gridRows.push({ html: mulRow, height: '2.2em' });
+    rowIndex++;
+
+    let ruleRow = '';
+    for (let c = 1; c <= P; c++) {
+        ruleRow += `<div class="hissanCell hissanRuleCell" style="grid-column:${c}; grid-row:${rowIndex};"></div>`;
+    }
+    gridRows.push({ html: ruleRow, height: '0.5em' });
+    rowIndex++;
+
+    let carryRow = '';
+    result.steps.forEach((step, stepIdx) => {
+        if (!step.isLast && step.carryOut > 0 && stepIdx + 1 < result.steps.length) {
+            const nextStep = result.steps[stepIdx + 1];
+            carryRow += `<div class="hissanCell hissanCarryCell hissanGridPending" data-step="${stepIdx}" style="grid-column:${nextStep.colStart}; grid-row:${rowIndex};">${step.carryOut}</div>`;
+        }
+    });
+    gridRows.push({ html: carryRow, height: '1em' });
+    rowIndex++;
+
+    let prodRow = '';
+    result.steps.forEach((step, stepIdx) => {
+        const s = step.writeStr;
+        for (let c = step.colStart; c <= step.colEnd; c++) {
+            const charIdx = c - step.colStart;
+            prodRow += `<div class="hissanCell hissanGridPending" data-step="${stepIdx}" style="grid-column:${c}; grid-row:${rowIndex};">${s[charIdx]}</div>`;
+        }
+    });
+    gridRows.push({ html: prodRow, height: '2.2em' });
+    rowIndex++;
+
+    const gridHtml = `<div class="hissanGrid" style="grid-template-columns:repeat(${P},2.2em); grid-template-rows:${gridRows.map(r=>r.height).join(' ')};">${gridRows.map(r=>r.html).join('')}</div>`;
+    return { gridHtml };
+}
+
+function startHissanMulInteractiveQuiz(containerEl, multiplicandStr, multiplier) {
+    const result = buildMultiplicationSteps(multiplicandStr, multiplier);
+    const { gridHtml } = buildHissanMulQuizGrid(multiplicandStr, multiplier, result);
+
+    containerEl.innerHTML = `
+        <div class="hissanCard">
+            ${gridHtml}
+            <ul class="hissanStepList" id="hissanMulQuizStepList"></ul>
+            <div id="hissanMulStageArea"></div>
+        </div>`;
+
+    const root = containerEl.querySelector('.hissanCard');
+    const stepListEl = root.querySelector('#hissanMulQuizStepList');
+    const stageArea = root.querySelector('#hissanMulStageArea');
+
+    function addExplain(html) {
+        const li = document.createElement('li');
+        li.innerHTML = html;
+        stepListEl.appendChild(li);
+    }
+    function reveal(selector) {
+        root.querySelectorAll(selector).forEach(el => el.classList.remove('hissanGridPending'));
+    }
+
+    let stepIdx = 0;
+
+    function runStep() {
+        if (stepIdx >= result.steps.length) {
+            stageArea.innerHTML = `<div class="hissanDoneMsg">🎉 できました！よくがんばったね！</div>`;
+            return;
+        }
+        const step = result.steps[stepIdx];
+        askProduct(step);
+    }
+
+    function askProduct(step) {
+        const carryText = step.carryIn > 0 ? ` ＋ ${step.carryIn}（くり上がり）` : '';
+        stageArea.innerHTML = `
+            <div class="hissanAnswerCard">
+                <p style="font-weight:bold; margin-bottom:10px;">${step.digit} × ${multiplier}${carryText} は？</p>
+                <div class="hissanAnswerRow">
+                    <input type="number" id="hissanMulInput" min="0">
+                </div>
+                <button class="hissanCheckBtn" id="hissanMulStageCheckBtn">かくにん！</button>
+                <div class="hissanAnswerFeedback" id="hissanMulStageFeedback"></div>
+            </div>`;
+        const input = stageArea.querySelector('#hissanMulInput');
+        const feedback = stageArea.querySelector('#hissanMulStageFeedback');
+        let wrongTries = 0;
+        stageArea.querySelector('#hissanMulStageCheckBtn').addEventListener('click', () => {
+            const val = parseInt(input.value, 10);
+            if (isNaN(val)) {
+                feedback.className = 'hissanAnswerFeedback hissanWrong';
+                feedback.textContent = '数字を入力してね！';
+                return;
+            }
+            if (val === step.raw) {
+                feedback.className = 'hissanAnswerFeedback hissanCorrect';
+                feedback.textContent = '🎉 せいかい！';
+                input.disabled = true;
+                stageArea.querySelector('#hissanMulStageCheckBtn').disabled = true;
+                setTimeout(() => {
+                    reveal(`[data-step="${stepIdx}"]`);
+                    if (step.isLast) {
+                        addExplain(`${step.digit} × ${multiplier}${carryText} ＝ <b>${step.raw}</b>。もうくり上がる先の桁がないので、<b>${step.writeStr}</b> とそのまま書きます。`);
+                        addExplain(`答えは <b>${result.product}</b> です。`);
+                    } else {
+                        addExplain(`${step.digit} × ${multiplier}${carryText} ＝ <b>${step.raw}</b>。一の位の <b>${step.writeStr}</b> を書いて、<b>${step.carryOut}</b> をくり上げます。`);
+                    }
+                    stepIdx++;
+                    runStep();
+                }, 400);
+            } else {
+                wrongTries++;
+                feedback.className = 'hissanAnswerFeedback hissanWrong';
+                if (wrongTries >= 3) {
+                    feedback.textContent = `おしい！正解は ${step.raw} だよ。`;
+                    input.disabled = true;
+                    stageArea.querySelector('#hissanMulStageCheckBtn').disabled = true;
+                    setTimeout(() => {
+                        reveal(`[data-step="${stepIdx}"]`);
+                        stepIdx++;
+                        runStep();
+                    }, 900);
+                } else {
+                    feedback.textContent = 'おしい！もう一度考えてみよう。';
+                }
+            }
+        });
+    }
+
+    runStep();
+}
+
+function generateHissanMultiplicationProblem() {
+    const digitCount = Math.random() < 0.5 ? 2 : 3;
+    const min = Math.pow(10, digitCount - 1);
+    const max = Math.pow(10, digitCount) - 1;
+    const multiplicand = Math.floor(Math.random() * (max - min + 1)) + min;
+    const multiplier = Math.floor(Math.random() * 8) + 2;
+    return { multiplicand, multiplier };
+}
+
+function renderHissanMulQuizMode(containerEl) {
+    containerEl.innerHTML = `
+        <span class="hissanBackLink" id="hissanMulQuizBack">← もどる</span>
+        <div class="hissanProblemBanner">
+            <p style="font-weight:bold; margin-bottom:6px;">🌸 この問題を筆算で解いてみよう！</p>
+            <button class="hissanNewProblemBtn" id="hissanMulNewProblemBtn">🔄 べつの問題にする</button>
+        </div>
+        <div id="hissanMulQuizGridArea"></div>`;
+
+    containerEl.querySelector('#hissanMulQuizBack').addEventListener('click', showHissanMulModeSelect);
+
+    const gridArea = containerEl.querySelector('#hissanMulQuizGridArea');
+
+    function newProblem() {
+        const { multiplicand, multiplier } = generateHissanMultiplicationProblem();
+        gridArea.innerHTML = '';
+        startHissanMulInteractiveQuiz(gridArea, String(multiplicand), multiplier);
+    }
+
+    containerEl.querySelector('#hissanMulNewProblemBtn').addEventListener('click', newProblem);
+    newProblem();
+}
+
+function renderHissanMulStepByStep(containerEl, multiplicandStr, multiplier) {
+    const result = buildMultiplicationSteps(multiplicandStr, multiplier);
+    const { gridHtml } = buildHissanMulQuizGrid(multiplicandStr, multiplier, result);
+
+    containerEl.innerHTML = `
+        <div class="hissanCard">
+            ${gridHtml}
+            <ul class="hissanStepList" id="hissanMulRevealStepList"></ul>
+            <button class="hissanNextBtn" id="hissanMulNextBtn">つぎへ ▶</button>
+        </div>`;
+
+    const root = containerEl.querySelector('.hissanCard');
+    const stepListEl = root.querySelector('#hissanMulRevealStepList');
+    const nextBtn = root.querySelector('#hissanMulNextBtn');
+    let currentStep = -1;
+
+    function revealNext() {
+        currentStep++;
+        if (currentStep >= result.steps.length) return;
+        const step = result.steps[currentStep];
+
+        root.querySelectorAll(`[data-step="${currentStep}"]`).forEach(el => el.classList.remove('hissanGridPending'));
+
+        const carryText = step.carryIn > 0 ? ` ＋ ${step.carryIn}（くり上がり）` : '';
+        const li = document.createElement('li');
+        if (step.isLast) {
+            li.innerHTML = `${step.digit} × ${multiplier}${carryText} ＝ <b>${step.raw}</b>。もうくり上がる先の桁がないので、<b>${step.writeStr}</b> とそのまま書きます。`;
+        } else {
+            li.innerHTML = `${step.digit} × ${multiplier}${carryText} ＝ <b>${step.raw}</b>。一の位の <b>${step.writeStr}</b> を書いて、<b>${step.carryOut}</b> をくり上げます。`;
+        }
+        stepListEl.appendChild(li);
+
+        if (currentStep >= result.steps.length - 1) {
+            const li2 = document.createElement('li');
+            li2.innerHTML = `答えは <b>${result.product}</b> です。`;
+            stepListEl.appendChild(li2);
+            nextBtn.textContent = 'おわり！';
+            nextBtn.disabled = true;
+        }
+    }
+
+    nextBtn.addEventListener('click', revealNext);
+}
+
+function renderHissanMulOwnInputMode(containerEl) {
+    containerEl.innerHTML = `
+        <span class="hissanBackLink" id="hissanMulOwnBack">← もどる</span>
+        <div class="hissanInputCard">
+            <div class="hissanInputRow">
+                <input type="number" id="hissanMulMultiplicandInput" placeholder="かけられる数" min="1">
+                ×
+                <input type="number" id="hissanMulMultiplierInput" placeholder="かける数(1桁)" min="1" max="9">
+            </div>
+            <button class="hissanCalcBtn" id="hissanMulCalcBtn">けいさんする</button>
+            <div class="hissanErrorMsg" id="hissanMulErrorMsg"></div>
+        </div>
+        <div id="hissanMulOwnResultArea"></div>`;
+
+    containerEl.querySelector('#hissanMulOwnBack').addEventListener('click', showHissanMulModeSelect);
+
+    const errorMsg = containerEl.querySelector('#hissanMulErrorMsg');
+    const resultArea = containerEl.querySelector('#hissanMulOwnResultArea');
+
+    containerEl.querySelector('#hissanMulCalcBtn').addEventListener('click', () => {
+        const multiplicand = parseInt(containerEl.querySelector('#hissanMulMultiplicandInput').value, 10);
+        const multiplier = parseInt(containerEl.querySelector('#hissanMulMultiplierInput').value, 10);
+
+        if (isNaN(multiplicand) || isNaN(multiplier)) {
+            errorMsg.textContent = '両方の数字を入力してね！';
+            return;
+        }
+        if (multiplicand < 1 || multiplicand > 99999) {
+            errorMsg.textContent = 'かけられる数は1〜99999の範囲で入力してね！';
+            return;
+        }
+        if (multiplier < 1 || multiplier > 9) {
+            errorMsg.textContent = 'かける数は1〜9の1桁で入力してね！';
+            return;
+        }
+        errorMsg.textContent = '';
+        resultArea.innerHTML = '';
+        renderHissanMulStepByStep(resultArea, String(multiplicand), multiplier);
+    });
+}
+
+
 
 ////////////////
 // 🌸 Memo
