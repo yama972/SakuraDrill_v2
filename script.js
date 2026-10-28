@@ -18891,6 +18891,494 @@ function resetPoint(index) {
 
 }
 
+// ============================================================
+// 🌸 わり算の筆算（ひっ算）ステップ生成エンジン
+// ============================================================
+function buildDivisionSteps(dividendStr, divisor) {
+    const digits = dividendStr.split('').map(Number);
+    let remainder = 0, quotientDigits = [], steps = [], started = false;
+    for (let i = 0; i < digits.length; i++) {
+        const digit = digits[i];
+        const bisected = remainder * 10 + digit;
+        const qDigit = Math.floor(bisected / divisor);
+        if (qDigit === 0 && !started) {
+            quotientDigits.push(null);
+            steps.push({ position:i, leading:true, broughtDownDigit:digit, bisected, quotientDigit:null, product:null, remainder:bisected });
+            remainder = bisected;
+        } else {
+            started = true;
+            const product = qDigit * divisor;
+            const newRemainder = bisected - product;
+            quotientDigits.push(qDigit);
+            steps.push({ position:i, leading:false, broughtDownDigit:digit, bisected, quotientDigit:qDigit, product, remainder:newRemainder });
+            remainder = newRemainder;
+        }
+    }
+    const quotientStr = quotientDigits.filter(d => d !== null).join('') || '0';
+    return { quotient:quotientStr, remainder, steps, quotientDigits, dividendLength:digits.length };
+}
+
+// ============================================================
+// 🌸 1ステップずつ表示するレンダラー
+// ============================================================
+function renderHissanStepByStep(containerEl, dividendStr, divisor) {
+    const result = buildDivisionSteps(dividendStr, divisor);
+    const N = result.dividendLength;
+
+    let gridRows = [];
+    let explanationsByStep = [];
+    let rowIndex = 1;
+
+    let quotientRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+    for (let i = 0; i < N; i++) {
+        const q = result.quotientDigits[i];
+        quotientRow += `<div class="hissanCell hissanPending" data-step="${i}" style="grid-column:${i+2}; grid-row:${rowIndex}; color:#1971c2;">${q !== null ? q : ''}</div>`;
+    }
+    gridRows.push({ html: quotientRow, height: '2.2em' });
+    rowIndex++;
+
+    let dividendRow = `<div class="hissanCell hissanDivisorCell" style="grid-column:1; grid-row:${rowIndex};">${divisor}</div>`;
+    const dividendDigits = dividendStr.split('');
+    for (let i = 0; i < N; i++) {
+        const isFirst = i === 0;
+        dividendRow += `<div class="hissanCell hissanDividendCell${isFirst?' hissanFirst':''}" style="grid-column:${i+2}; grid-row:${rowIndex};">${dividendDigits[i]}</div>`;
+    }
+    gridRows.push({ html: dividendRow, height: '2.2em' });
+    rowIndex++;
+
+    let firstProductiveDone = false;
+    let lastRemainder = 0;
+
+    result.steps.forEach((step, idx) => {
+        explanationsByStep[idx] = [];
+
+        if (step.leading) {
+            explanationsByStep[idx].push(`${step.bisected} は ${divisor} より小さいので、商は立ちません。次のけたをおろします。`);
+            return;
+        }
+
+        const colEndBisected = step.position;
+        const bisectedStr = String(step.bisected);
+        const colStartBisected = colEndBisected - (bisectedStr.length - 1);
+
+        if (firstProductiveDone) {
+            let bringRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+            for (let c = 0; c < bisectedStr.length; c++) {
+                bringRow += `<div class="hissanCell hissanPending" data-step="${idx}" style="grid-column:${colStartBisected+c+2}; grid-row:${rowIndex};">${bisectedStr[c]}</div>`;
+            }
+            gridRows.push({ html: bringRow, height: '2.2em' });
+            rowIndex++;
+        }
+
+        const productStr = String(step.product);
+        const colEndProduct = step.position;
+        const colStartProduct = colEndProduct - (productStr.length - 1);
+        let productRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+        for (let c = 0; c < productStr.length; c++) {
+            const isLast = c === 0;
+            productRow += `<div class="hissanCell hissanPending${isLast?' hissanMinusSign':''}" data-step="${idx}" style="grid-column:${colStartProduct+c+2}; grid-row:${rowIndex};">${productStr[c]}</div>`;
+        }
+        gridRows.push({ html: productRow, height: '2.2em' });
+        rowIndex++;
+
+        let ruleRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+        for (let c = colStartProduct; c <= colEndProduct; c++) {
+            ruleRow += `<div class="hissanCell hissanRuleCell hissanPending" data-step="${idx}" style="grid-column:${c+2}; grid-row:${rowIndex};"></div>`;
+        }
+        gridRows.push({ html: ruleRow, height: '0.5em' });
+        rowIndex++;
+
+        if (!firstProductiveDone) {
+            explanationsByStep[idx].push(`<b>${step.bisected}</b> ÷ <b>${divisor}</b> を考えます。${divisor} × <b>${step.quotientDigit}</b> ＝ <b>${step.product}</b> なので、商は <b>${step.quotientDigit}</b> です。`);
+        } else {
+            explanationsByStep[idx].push(`前のあまり「<b>${lastRemainder}</b>」に、次の数字「<b>${step.broughtDownDigit}</b>」をおろして <b>${step.bisected}</b> にします。${divisor} × <b>${step.quotientDigit}</b> ＝ <b>${step.product}</b> なので、商は <b>${step.quotientDigit}</b> です。`);
+        }
+        explanationsByStep[idx].push(`<b>${step.bisected}</b> − <b>${step.product}</b> ＝ <b>${step.remainder}</b>`);
+        lastRemainder = step.remainder;
+        firstProductiveDone = true;
+
+        if (idx === result.steps.length - 1) {
+            const remStr = String(step.remainder);
+            let remRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+            const colEndRem = step.position;
+            const colStartRem = colEndRem - (remStr.length - 1);
+            for (let c = 0; c < remStr.length; c++) {
+                remRow += `<div class="hissanCell hissanRemainderCell hissanPending" data-step="${idx}" style="grid-column:${colStartRem+c+2}; grid-row:${rowIndex};">${remStr[c]}</div>`;
+            }
+            gridRows.push({ html: remRow, height: '2.2em' });
+            rowIndex++;
+            explanationsByStep[idx].push(step.remainder === 0
+                ? `わりきれました！ 答えは <b>${result.quotient}</b> です。`
+                : `もう数字がないので、あまりは <b>${step.remainder}</b> です。答えは <b>${result.quotient} あまり ${step.remainder}</b> です。`);
+        }
+    });
+
+    const gridHtml = `<div class="hissanGrid" style="grid-template-columns:2.2em repeat(${N},2.2em); grid-template-rows:${gridRows.map(r=>r.height).join(' ')};">${gridRows.map(r=>r.html).join('')}</div>`;
+
+    containerEl.innerHTML = `
+        <div class="hissanCard">
+            ${gridHtml}
+            <ul class="hissanStepList" id="hissanStepListArea"></ul>
+            <button class="hissanNextBtn" id="hissanNextBtn">つぎへ ▶</button>
+        </div>`;
+
+    const root = containerEl.querySelector('.hissanCard');
+    const stepListEl = root.querySelector('#hissanStepListArea');
+    const nextBtn = root.querySelector('#hissanNextBtn');
+    let currentStep = -1;
+
+    function revealNext() {
+        currentStep++;
+        if (currentStep >= result.steps.length) return;
+        root.querySelectorAll(`[data-step="${currentStep}"]`).forEach(el => el.classList.remove('hissanPending'));
+        (explanationsByStep[currentStep] || []).forEach(text => {
+            const li = document.createElement('li');
+            li.innerHTML = text;
+            stepListEl.appendChild(li);
+        });
+        if (currentStep >= result.steps.length - 1) {
+            nextBtn.textContent = 'おわり！';
+            nextBtn.disabled = true;
+        }
+    }
+    nextBtn.addEventListener('click', revealNext);
+}
+
+
+// ============================================================
+// 🌸 筆算れんしゅう：画面の出し入れ
+// ============================================================
+function openHissanChallenge() {
+    clearScreens();
+    document.getElementById("challengeHomeArea").style.display = "none";
+    document.getElementById("hissanArea").style.display = "block";
+    showHissanModeSelect();
+}
+
+function backToChallengeHomeFromHissan() {
+    document.getElementById("hissanArea").style.display = "none";
+    document.getElementById("challengeHomeArea").style.display = "block";
+}
+
+function showHissanModeSelect() {
+    document.getElementById("hissanModeSelect").style.display = "block";
+    document.getElementById("hissanOwnInput").style.display = "none";
+    document.getElementById("hissanQuizMode").style.display = "none";
+    renderHissanModeSelect(document.getElementById("hissanModeSelect"));
+}
+
+function renderHissanModeSelect(containerEl) {
+    containerEl.innerHTML = `
+        <div class="hissanModeSelectCard">
+            <p style="font-weight:bold; margin-bottom:16px;">🌸 Sakura先生「わり算の筆算をやってみよう！どっちにする？」</p>
+            <button class="hissanModeBtn hissanQuiz" id="hissanBtnQuizMode">
+                📝 もんだいに挑戦！
+                <small>アプリが問題を用意するよ</small>
+            </button>
+            <button class="hissanModeBtn hissanOwn" id="hissanBtnOwnMode">
+                ✏️ 自分の数字で計算
+                <small>好きな数字を入力してみよう</small>
+            </button>
+        </div>`;
+    containerEl.querySelector('#hissanBtnQuizMode').addEventListener('click', () => {
+        containerEl.style.display = 'none';
+        const quizEl = document.getElementById('hissanQuizMode');
+        quizEl.style.display = 'block';
+        renderHissanQuizMode(quizEl);
+    });
+    containerEl.querySelector('#hissanBtnOwnMode').addEventListener('click', () => {
+        containerEl.style.display = 'none';
+        const ownEl = document.getElementById('hissanOwnInput');
+        ownEl.style.display = 'block';
+        renderHissanOwnInputMode(ownEl);
+    });
+}
+
+function renderHissanOwnInputMode(containerEl) {
+    containerEl.innerHTML = `
+        <span class="hissanBackLink" id="hissanOwnBack">← もどる</span>
+        <div class="hissanInputCard">
+            <div class="hissanInputRow">
+                <input type="number" id="hissanDividendInput" min="0" max="999999" placeholder="わられる数">
+                <span>÷</span>
+                <input type="number" id="hissanDivisorInput" min="1" max="999" placeholder="わる数">
+            </div>
+            <button class="hissanCalcBtn" id="hissanCalcBtn">けいさんする！</button>
+            <div class="hissanErrorMsg" id="hissanErrorMsg"></div>
+        </div>
+        <div id="hissanOwnResultArea"></div>`;
+
+    containerEl.querySelector('#hissanOwnBack').addEventListener('click', showHissanModeSelect);
+
+    const dividendInput = containerEl.querySelector('#hissanDividendInput');
+    const divisorInput = containerEl.querySelector('#hissanDivisorInput');
+    const errorMsg = containerEl.querySelector('#hissanErrorMsg');
+    const resultArea = containerEl.querySelector('#hissanOwnResultArea');
+
+    containerEl.querySelector('#hissanCalcBtn').addEventListener('click', () => {
+        const dividend = parseInt(dividendInput.value, 10);
+        const divisor = parseInt(divisorInput.value, 10);
+        errorMsg.textContent = '';
+        resultArea.innerHTML = '';
+
+        if (isNaN(dividend) || isNaN(divisor)) {
+            errorMsg.textContent = 'りょうほうの数字を入力してね！';
+            return;
+        }
+        if (divisor <= 0) {
+            errorMsg.textContent = '「わる数」は1より大きい数にしてね！';
+            return;
+        }
+        if (dividend < 0) {
+            errorMsg.textContent = '「わられる数」は0以上の数にしてね！';
+            return;
+        }
+        if (dividend > 999999) {
+            errorMsg.textContent = 'もう少し小さい数で計算してみよう！（999999まで）';
+            return;
+        }
+        renderHissanStepByStep(resultArea, String(dividend), divisor);
+    });
+}
+
+function generateHissanDivisionProblem() {
+    const divisor = Math.floor(Math.random() * 98) + 2;
+    let dividend;
+    do {
+        dividend = Math.floor(Math.random() * 9900) + 100;
+    } while (dividend <= divisor);
+    return { dividend, divisor };
+}
+
+function renderHissanQuizMode(containerEl) {
+    containerEl.innerHTML = `
+        <span class="hissanBackLink" id="hissanQuizBack">← もどる</span>
+        <div class="hissanProblemBanner">
+            <p style="font-weight:bold; margin-bottom:6px;">🌸 この問題を筆算で解いてみよう！</p>
+            <button class="hissanNewProblemBtn" id="hissanNewProblemBtn">🔄 べつの問題にする</button>
+        </div>
+        <div id="hissanQuizGridArea"></div>`;
+
+    containerEl.querySelector('#hissanQuizBack').addEventListener('click', showHissanModeSelect);
+
+    const gridArea = containerEl.querySelector('#hissanQuizGridArea');
+
+    function newProblem() {
+        const { dividend, divisor } = generateHissanDivisionProblem();
+        gridArea.innerHTML = '';
+        startHissanInteractiveQuiz(gridArea, String(dividend), divisor);
+    }
+
+    containerEl.querySelector('#hissanNewProblemBtn').addEventListener('click', newProblem);
+    newProblem();
+}
+
+function buildHissanQuizGrid(dividendStr, divisor, result) {
+    const N = result.dividendLength;
+    let gridRows = [];
+    let rowIndex = 1;
+
+    let quotientRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+    let qIndexCounter = 0;
+    for (let i = 0; i < N; i++) {
+        const digit = result.quotientDigits[i];
+        if (digit === null) {
+            quotientRow += `<div class="hissanCell" style="grid-column:${i+2}; grid-row:${rowIndex}; color:#1971c2;"></div>`;
+        } else {
+            const qIdx = qIndexCounter++;
+            quotientRow += `<div class="hissanCell hissanGridPending" data-qpos="${qIdx}" style="grid-column:${i+2}; grid-row:${rowIndex}; color:#1971c2;">${digit}</div>`;
+        }
+    }
+    gridRows.push({ html: quotientRow, height: '2.2em' });
+    rowIndex++;
+
+    let dividendRow = `<div class="hissanCell hissanDivisorCell" style="grid-column:1; grid-row:${rowIndex};">${divisor}</div>`;
+    const dividendDigits = dividendStr.split('');
+    for (let i = 0; i < N; i++) {
+        const isFirst = i === 0;
+        dividendRow += `<div class="hissanCell hissanDividendCell${isFirst ? ' hissanFirst' : ''}" style="grid-column:${i+2}; grid-row:${rowIndex};">${dividendDigits[i]}</div>`;
+    }
+    gridRows.push({ html: dividendRow, height: '2.2em' });
+    rowIndex++;
+
+    const productiveSteps = result.steps.filter(s => !s.leading);
+    const stepMeta = [];
+
+    productiveSteps.forEach((step, j) => {
+        const meta = { step };
+        const bisectedStr = String(step.bisected);
+        const colEnd = step.position;
+        const colStartBisected = colEnd - (bisectedStr.length - 1);
+
+        if (j > 0) {
+            let bringRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+            for (let c = 0; c < bisectedStr.length; c++) {
+                bringRow += `<div class="hissanCell hissanGridPending" data-bispos="${j}-${c}" style="grid-column:${colStartBisected + c + 2}; grid-row:${rowIndex};">${bisectedStr[c]}</div>`;
+            }
+            gridRows.push({ html: bringRow, height: '2.2em' });
+            rowIndex++;
+        }
+
+        const productStr = String(step.product);
+        const colEndP = step.position;
+        const colStartP = colEndP - (productStr.length - 1);
+        let productRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+        for (let c = 0; c < productStr.length; c++) {
+            const isLast = c === 0;
+            productRow += `<div class="hissanCell hissanGridPending${isLast ? ' hissanMinusSign' : ''}" data-prodpos="${j}-${c}" style="grid-column:${colStartP + c + 2}; grid-row:${rowIndex};">${productStr[c]}</div>`;
+        }
+        gridRows.push({ html: productRow, height: '2.2em' });
+        rowIndex++;
+
+        let ruleRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+        for (let c = colStartP; c <= colEndP; c++) {
+            ruleRow += `<div class="hissanCell hissanRuleCell hissanGridPending" data-rulepos="${j}-${c}" style="grid-column:${c+2}; grid-row:${rowIndex};"></div>`;
+        }
+        gridRows.push({ html: ruleRow, height: '0.5em' });
+        rowIndex++;
+
+        if (j === productiveSteps.length - 1) {
+            const remStr = String(step.remainder);
+            const colEndRem = step.position;
+            const colStartRem = colEndRem - (remStr.length - 1);
+            let remRow = `<div class="hissanCell" style="grid-column:1; grid-row:${rowIndex};"></div>`;
+            for (let c = 0; c < remStr.length; c++) {
+                remRow += `<div class="hissanCell hissanRemainderCell hissanGridPending" data-rempos="${c}" style="grid-column:${colStartRem + c + 2}; grid-row:${rowIndex};">${remStr[c]}</div>`;
+            }
+            gridRows.push({ html: remRow, height: '2.2em' });
+            rowIndex++;
+        }
+
+        stepMeta.push(meta);
+    });
+
+    const gridHtml = `<div class="hissanGrid" style="grid-template-columns:2.2em repeat(${N},2.2em); grid-template-rows:${gridRows.map(r=>r.height).join(' ')};">${gridRows.map(r=>r.html).join('')}</div>`;
+
+    return { gridHtml, stepMeta, productiveSteps };
+}
+
+function startHissanInteractiveQuiz(containerEl, dividendStr, divisor) {
+    const result = buildDivisionSteps(dividendStr, divisor);
+    const { gridHtml, productiveSteps } = buildHissanQuizGrid(dividendStr, divisor, result);
+
+    containerEl.innerHTML = `
+        <div class="hissanCard">
+            ${gridHtml}
+            <ul class="hissanStepList" id="hissanStepList"></ul>
+            <div id="hissanStageArea"></div>
+        </div>`;
+
+    const root = containerEl.querySelector('.hissanCard');
+    const stepListEl = root.querySelector('#hissanStepList');
+    const stageArea = root.querySelector('#hissanStageArea');
+
+    function addExplain(html) {
+        const li = document.createElement('li');
+        li.innerHTML = html;
+        stepListEl.appendChild(li);
+    }
+
+    function reveal(selector) {
+        root.querySelectorAll(selector).forEach(el => el.classList.remove('hissanGridPending'));
+    }
+
+    let stepIdx = 0;
+
+    function runStep() {
+        if (stepIdx >= productiveSteps.length) {
+            stageArea.innerHTML = `<div class="hissanDoneMsg">🎉 できました！よくがんばったね！</div>`;
+            return;
+        }
+        const step = productiveSteps[stepIdx];
+
+        if (stepIdx > 0) {
+            askBisected(step, () => askQuotient(step, () => finishStep(step)));
+        } else {
+            askQuotient(step, () => finishStep(step));
+        }
+    }
+
+    function renderStage(labelHtml, inputId, checkLabel, onCorrect, expectedValue) {
+        stageArea.innerHTML = `
+            <div class="hissanAnswerCard">
+                <div class="hissanAnswerRow">
+                    ${labelHtml}
+                    <input type="number" id="${inputId}" min="0">
+                </div>
+                <button class="hissanCheckBtn" id="hissanStageCheckBtn">${checkLabel}</button>
+                <div class="hissanAnswerFeedback" id="hissanStageFeedback"></div>
+            </div>`;
+        const input = stageArea.querySelector('#' + inputId);
+        const feedback = stageArea.querySelector('#hissanStageFeedback');
+        let wrongTries = 0;
+        stageArea.querySelector('#hissanStageCheckBtn').addEventListener('click', () => {
+            const val = parseInt(input.value, 10);
+            if (isNaN(val)) {
+                feedback.className = 'hissanAnswerFeedback hissanWrong';
+                feedback.textContent = '数字を入力してね！';
+                return;
+            }
+            if (val === expectedValue) {
+                feedback.className = 'hissanAnswerFeedback hissanCorrect';
+                feedback.textContent = '🎉 せいかい！';
+                input.disabled = true;
+                stageArea.querySelector('#hissanStageCheckBtn').disabled = true;
+                setTimeout(onCorrect, 400);
+            } else {
+                wrongTries++;
+                feedback.className = 'hissanAnswerFeedback hissanWrong';
+                if (wrongTries >= 3) {
+                    feedback.textContent = `おしい！正解は ${expectedValue} だよ。`;
+                    input.disabled = true;
+                    stageArea.querySelector('#hissanStageCheckBtn').disabled = true;
+                    setTimeout(onCorrect, 900);
+                } else {
+                    feedback.textContent = 'おしい！もう一度考えてみよう。';
+                }
+            }
+        });
+    }
+
+    function askBisected(step, next) {
+        const prevStep = productiveSteps[stepIdx - 1];
+        renderStage('次の数は', 'hissanBisectedInput', 'かくにん！', () => {
+            reveal(`[data-bispos^="${stepIdx}-"]`);
+            addExplain(`<b>${prevStep.bisected}</b> − <b>${prevStep.product}</b> ＝ <b>${prevStep.remainder}</b>`);
+            addExplain(`前のあまりに次の数字「<b>${step.broughtDownDigit}</b>」をおろして <b>${step.bisected}</b> にします。`);
+            next();
+        }, step.bisected);
+    }
+
+    function askQuotient(step, next) {
+        renderStage('商は', 'hissanQuotientInput', 'かくにん！', () => {
+            reveal(`[data-qpos="${stepIdx}"]`);
+            reveal(`[data-prodpos^="${stepIdx}-"]`);
+            reveal(`[data-rulepos^="${stepIdx}-"]`);
+            addExplain(`<b>${step.bisected}</b> ÷ <b>${divisor}</b> を考えます。${divisor} × <b>${step.quotientDigit}</b> ＝ <b>${step.product}</b> なので、商は <b>${step.quotientDigit}</b> です。`);
+            next();
+        }, step.quotientDigit);
+    }
+
+    function finishStep(step) {
+        if (stepIdx === productiveSteps.length - 1) {
+            renderStage('あまりは', 'hissanRemainderInput', 'かくにん！', () => {
+                reveal('[data-rempos]');
+                addExplain(`<b>${step.bisected}</b> − <b>${step.product}</b> ＝ <b>${step.remainder}</b>`);
+                addExplain(step.remainder === 0
+                    ? `わりきれました！ 答えは <b>${result.quotient}</b> です。`
+                    : `答えは <b>${result.quotient} あまり ${step.remainder}</b> です。`);
+                stepIdx++;
+                runStep();
+            }, step.remainder);
+        } else {
+            stepIdx++;
+            runStep();
+        }
+    }
+
+    runStep();
+}
+
 
 ////////////////
 // 🌸 Memo

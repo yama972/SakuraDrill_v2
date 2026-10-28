@@ -3035,3 +3035,114 @@ button {
     }
 
 }
+
+.hissanCard {
+    background:#fff; border:2px solid #ffd6e0; border-radius:16px;
+    padding:24px; max-width:480px; margin:0 auto 20px; box-shadow:0 4px 10px rgba(0,0,0,.06);
+}
+.hissanGrid {
+    display:grid; align-items:center; font-size:1.6rem; font-weight:bold;
+    color:#333; justify-content:center; margin-bottom:18px; overflow-x:auto;
+}
+.hissanCell { text-align:center; padding:0 2px; }
+.hissanDivisorCell { text-align:right; padding-right:6px; }
+.hissanDividendCell { border-top:3px solid #333; }
+.hissanDividendCell.hissanFirst { border-left:3px solid #333; }
+.hissanRuleCell { border-top:2px solid #999; align-self:start; }
+.hissanMinusSign { position:relative; }
+.hissanMinusSign::before { content:"−"; position:absolute; left:-1.1em; color:#d6336c; }
+.hissanRemainderCell { color:#d6336c; }
+.hissanCell.hissanPending { visibility:hidden; }
+
+.hissanStepList { margin-top:10px; padding:0; list-style:none; }
+.hissanStepList li {
+    background:#fff0f3; border-left:4px solid #ff8fab; border-radius:6px;
+    padding:8px 12px; margin-bottom:6px; font-size:.95rem; color:#555; text-align:left;
+}
+.hissanStepList li b { color:#d6336c; }
+
+.hissanNextBtn {
+    display:block; width:100%; margin-top:14px; padding:12px;
+    background:#ff8fab; color:#fff; font-weight:bold; font-size:1.05rem;
+    border:none; border-radius:10px; cursor:pointer;
+}
+.hissanNextBtn:hover { background:#ff6f91; }
+.hissanNextBtn[disabled] { background:#e9ecef; color:#adb5bd; cursor:default; }
+
+.hissanModeSelectCard {
+    background:#fff; border:2px solid #ffd6e0; border-radius:16px;
+    padding:24px; max-width:420px; margin:0 auto; text-align:center;
+}
+.hissanModeBtn {
+    display:block; width:100%; padding:18px; margin-bottom:14px;
+    border:none; border-radius:14px; font-size:1.15rem; font-weight:bold;
+    color:#fff; cursor:pointer;
+}
+.hissanModeBtn.hissanQuiz { background:#4dabf7; }
+.hissanModeBtn.hissanQuiz:hover { background:#339af0; }
+.hissanModeBtn.hissanOwn { background:#ff8fab; }
+.hissanModeBtn.hissanOwn:hover { background:#ff6f91; }
+.hissanModeBtn small { display:block; font-weight:normal; font-size:.8rem; margin-top:4px; opacity:.9; }
+
+.hissanInputCard {
+    background:#fff; border:2px solid #ffd6e0; border-radius:16px;
+    padding:24px; max-width:420px; margin:0 auto 20px;
+}
+.hissanInputRow { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:14px; font-size:1.2rem; font-weight:bold; }
+.hissanInputRow input {
+    width:5.5em; font-size:1.3rem; text-align:center; padding:6px;
+    border:2px solid #ffc2d1; border-radius:8px;
+}
+.hissanCalcBtn {
+    display:block; width:100%; padding:14px; background:#ff8fab; color:#fff;
+    font-weight:bold; font-size:1.1rem; border:none; border-radius:10px; cursor:pointer;
+}
+.hissanCalcBtn:hover { background:#ff6f91; }
+.hissanErrorMsg { color:#e03131; text-align:center; font-size:.9rem; margin-top:6px; min-height:1.2em; }
+
+.hissanProblemBanner {
+    background:#fff; border:2px solid #ffd6e0; border-radius:16px;
+    padding:20px; max-width:420px; margin:0 auto 20px; text-align:center;
+}
+.hissanProblemBanner .hissanFormula { font-size:1.8rem; font-weight:bold; color:#d6336c; margin-bottom:10px; }
+.hissanNewProblemBtn {
+    padding:10px 18px; background:#4dabf7; color:#fff; font-weight:bold;
+    border:none; border-radius:10px; cursor:pointer; font-size:.95rem;
+}
+.hissanNewProblemBtn:hover { background:#339af0; }
+
+.hissanBackLink {
+    display:inline-block; margin-bottom:14px; color:#868e96; font-size:.9rem;
+    cursor:pointer; text-decoration:underline;
+}
+
+.hissanAnswerCard {
+    background:#fff; border:2px solid #ffd6e0; border-radius:16px;
+    padding:20px; max-width:420px; margin:0 auto 20px; text-align:center;
+}
+.hissanAnswerRow { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:14px; font-size:1.05rem; font-weight:bold; flex-wrap:wrap; }
+.hissanAnswerRow input {
+    width:4.5em; font-size:1.2rem; text-align:center; padding:6px;
+    border:2px solid #ffc2d1; border-radius:8px;
+}
+.hissanCheckBtn {
+    padding:12px 20px; background:#ff8fab; color:#fff; font-weight:bold;
+    font-size:1rem; border:none; border-radius:10px; cursor:pointer;
+}
+.hissanCheckBtn:hover { background:#ff6f91; }
+.hissanAnswerFeedback { margin-top:10px; font-weight:bold; min-height:1.4em; }
+.hissanAnswerFeedback.hissanCorrect { color:#2b8a3e; }
+.hissanAnswerFeedback.hissanWrong { color:#e8590c; }
+.hissanShowExplainBtn {
+    display:block; width:100%; margin-top:10px; padding:12px;
+    background:#4dabf7; color:#fff; font-weight:bold; font-size:1rem;
+    border:none; border-radius:10px; cursor:pointer;
+}
+.hissanShowExplainBtn:hover { background:#339af0; }
+
+.hissanGridPending { visibility:hidden; }
+
+.hissanDoneMsg {
+    text-align:center; color:#2b8a3e; font-weight:bold;
+    margin-top:10px; font-size:1.1rem;
+}
