@@ -19833,6 +19833,98 @@ function exitQuizToChallengeHome() {
 
 }
 
+/////////////////////////////////////////////////////
+// 🌸 算数：つうじょう／九九 の分岐（2年生のみ）
+/////////////////////////////////////////////////////
+
+function openMathChallengeCourse() {
+
+    clearScreens();
+
+    if (currentUser && currentUser.grade === "grade2") {
+        document.getElementById("mathModeSelectArea").style.display = "block";
+    } else {
+        document.getElementById("challengeCourseArea").style.display = "block";
+    }
+
+}
+
+function showChallengeCourseSelect() {
+    document.getElementById("mathModeSelectArea").style.display = "none";
+    document.getElementById("challengeCourseArea").style.display = "block";
+}
+
+function showKukuMenu() {
+    document.getElementById("mathModeSelectArea").style.display = "none";
+    document.getElementById("kukuMenuArea").style.display = "block";
+}
+
+function backToMathModeSelect() {
+    document.getElementById("kukuMenuArea").style.display = "none";
+    document.getElementById("mathModeSelectArea").style.display = "block";
+}
+
+
+/////////////////////////////////////////////////////
+// 🌸 九九：問題の自動生成とクイズ開始
+/////////////////////////////////////////////////////
+
+function generateKukuQuestions(dan) {
+
+    const dans = dan ? [dan] : [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+    let questions = [];
+
+    dans.forEach(d => {
+        for (let i = 1; i <= 9; i++) {
+            questions.push({
+                grade: 2,
+                unit: `九九（${d}のだん）`,
+                type: "kuku",
+                q: `${d} × ${i} = ？`,
+                a: d * i,
+                memo: `${d}のだんは、かける数が1ふえるごとに${d}ずつ大きくなります。${d} × ${i} = ${d * i}です。`
+            });
+        }
+    });
+
+    return questions;
+
+}
+
+function startKukuQuiz(dan, count) {
+
+    reviewMode = false;
+    reviewList = [];
+    reviewIndex = 0;
+
+    kokugoMode = false;
+    rikaMode = false;
+    englishMode = false;
+
+    resetQuizState();
+
+    currentUnit = dan ? `九九コース（${dan}のだん）` : "九九コース（ランダム）";
+    questionCount = 0;
+    score = 0;
+
+    challengeType = "math";
+    challengeCourse = dan ? `🔢 ${dan}のだん` : "🎲 九九ランダム";
+
+    const allKuku = generateKukuQuestions(dan);
+
+    const chosen = shuffleArray([...allKuku]);
+
+    quizState.questions = count ? chosen.slice(0, count) : chosen;
+
+    maxQuestions = quizState.questions.length;
+    challengeCount = maxQuestions;
+
+    document.getElementById("kukuMenuArea").style.display = "none";
+
+    showQuestion();
+
+}
 
 ////////////////
 // 🌸 Memo

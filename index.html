@@ -12,7 +12,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <link rel="stylesheet" href="style.css?v=20260912-25">
+    <link rel="stylesheet" href="style.css?v=20260912-26">
 
     <title>SakuraDrill</title>
 
@@ -21,7 +21,7 @@
          新しいバージョンが公開されていたら自動的に読み込み直す。
          ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
     <script>
-        window.SAKURA_BUILD = "20260912-25";
+        window.SAKURA_BUILD = "20260912-26";
         (function () {
             fetch("version.txt", { cache: "no-store" })
                 .then(function (res) { return res.text(); })
@@ -560,7 +560,7 @@
 <!-- ========================= -->
 <!-- 🏆 Challenge コース選択 -->
 <!-- ========================= -->
-<div id="challengeCourseArea" class="card" style="display:none;">
+<div id="mathModeSelectArea" class="card" style="display:none;"><h2>🧮 さんすう</h2><div class="teacherMessage">🌸 Sakura先生<br>「どっちのれんしゅうにする？」</div><button class="challengeCard beginnerCard" onclick="showChallengeCourseSelect()">📘 つうじょうのさんすう</button><button class="challengeCard roundoffCard" onclick="showKukuMenu()">🔢 九九れんしゅう</button><br><br><button class="challengeBackBtn" onclick="backToChallengeHome()">📚 戻る</button></div><div id="kukuMenuArea" class="card" style="display:none;"><h2>🔢 九九れんしゅう</h2><div class="teacherMessage">🌸 Sakura先生<br>「どの段をれんしゅうする？」</div><button class="challengeCard beginnerCard" onclick="startKukuQuiz(1, null)">1のだん</button><button class="challengeCard beginnerCard" onclick="startKukuQuiz(2, null)">2のだん</button><button class="challengeCard beginnerCard" onclick="startKukuQuiz(3, null)">3のだん</button><button class="challengeCard beginnerCard" onclick="startKukuQuiz(4, null)">4のだん</button><button class="challengeCard beginnerCard" onclick="startKukuQuiz(5, null)">5のだん</button><button class="challengeCard beginnerCard" onclick="startKukuQuiz(6, null)">6のだん</button><button class="challengeCard beginnerCard" onclick="startKukuQuiz(7, null)">7のだん</button><button class="challengeCard beginnerCard" onclick="startKukuQuiz(8, null)">8のだん</button><button class="challengeCard beginnerCard" onclick="startKukuQuiz(9, null)">9のだん</button><br><br><button class="challengeCard roundoffCard" onclick="startKukuQuiz(null, 20)">🎲 ランダム（20問）</button><br><br><button class="challengeBackBtn" onclick="backToMathModeSelect()">📚 戻る</button></div><div id="challengeCourseArea" class="card" style="display:none;">
 
     <h2>🏆 Sakura Challenge</h2>
 
@@ -1802,7 +1802,7 @@
                         <script src="data/grades/grade6_social_studies.js"></script>
 
                         <!-- 🌸 算数データベース -->
-                        <script src="data/math/grade1_math.js?v=20260912-25"></script>
+                        <script src="data/math/grade1_math.js?v=20260912-26"></script>
                         <script src="data/math/grade2_math.js"></script>
                         <script src="data/math/grade3_math.js"></script>
                         <script src="data/math/grade4_math.js?v=20260911-25"></script>
@@ -1848,7 +1848,7 @@
                         <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
-                        <script src="script.js?v=20260912-25"></script>
+                        <script src="script.js?v=20260912-26"></script>
 
 
                         
