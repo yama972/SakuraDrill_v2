@@ -12,7 +12,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <link rel="stylesheet" href="style.css?v=20260912-27">
+    <link rel="stylesheet" href="style.css?v=20260912-28">
 
     <title>SakuraDrill</title>
 
@@ -21,7 +21,7 @@
          新しいバージョンが公開されていたら自動的に読み込み直す。
          ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
     <script>
-        window.SAKURA_BUILD = "20260912-27";
+        window.SAKURA_BUILD = "20260912-28";
         (function () {
             fetch("version.txt", { cache: "no-store" })
                 .then(function (res) { return res.text(); })
@@ -90,17 +90,13 @@
 <!-- 🌸 管理者モード -->
 <div class="homeActions">
     <button id="adminBtn" class="menuBtn" onclick="showPointManager()">
-        🔒 管理者
-    </button>
-</div>
+        🔒 管理者</button></div><div class="homeActions"><button id="noticeBtn" class="menuBtn" onclick="openNoticeArea()">📢 お知らせ</button></div>
 
 </div>
 
     </div>
 
-    <hr>
-
-    <div id="userStatus" class="userStatus"></div>
+<div id="noticeArea" class="card" style="display:none;"><h2>📢 お知らせ</h2><div class="howToSection"><h3>🌸 このアプリについて</h3><p>小学1年生から中学3年生まで、国語・算数・理科・社会・英語の問題を練習できます。<br>文部科学省の学習指導要領にもとづいた問題です。<br>スマホ・タブレット・パソコンで使えますが、スマホは画面が小さいかもしれません。</p></div><div class="howToSection"><h3>🔒 データについて（安心してお使いください）</h3><p>「＋ 新しく追加」から、お子さんの名前・学年・アイコンを登録してお使いください。<br>登録した名前は、他のお子さんの記録と完全に別々に保存されるので、混ざる心配はありません。<br>登録した名前や成績は、その端末の中だけに保存される仕組みで、どこか（インターネットの向こう側）に送信されることはありません。</p></div><div class="howToSection"><h3>🙏 ひとこと</h3><p>個人で少しずつ手直ししているサイトです。もし変な動きや気になる点があれば、気軽に教えてください。</p></div><div class="howToSection"><h3>🆕 更新履歴</h3><p>・つかいかた説明画面を追加<br>・2年生向けに九九れんしゅう機能を追加<br>・概数（がい数）コースを追加<br>・かけ算の筆算れんしゅうを追加<br>・わり算の筆算れんしゅうを追加<br>・全国チャレンジ・社会チャレンジを追加<br>・新潟たんけんに長岡市・弥彦村を追加<br>・オフラインでも使えるようにしました</p></div><button class="menuBtn" onclick="backToHomeFromNotice()">🏠 ホームへ戻る</button></div><hr><div id="userStatus" class="userStatus"></div>
     <!-- 🌸 Sakura Point -->
     <div id="pointText" class="pointBox">
         🌸 Sakura Point : 0P
@@ -1800,7 +1796,7 @@
                         <script src="data/grades/grade6_social_studies.js"></script>
 
                         <!-- 🌸 算数データベース -->
-                        <script src="data/math/grade1_math.js?v=20260912-27"></script>
+                        <script src="data/math/grade1_math.js?v=20260912-28"></script>
                         <script src="data/math/grade2_math.js"></script>
                         <script src="data/math/grade3_math.js"></script>
                         <script src="data/math/grade4_math.js?v=20260911-25"></script>
@@ -1846,7 +1842,7 @@
                         <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
-                        <script src="script.js?v=20260912-27"></script>
+                        <script src="script.js?v=20260912-28"></script>
 
 
                         

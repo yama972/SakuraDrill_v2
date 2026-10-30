@@ -993,7 +993,7 @@ function clearScreens() {
         "studyRecordArea",
 
         // 🌸 うんちくクイズ（一服タイム）
-        "triviaArea", "howToArea", "mathModeSelectArea", "kukuMenuArea"
+        "triviaArea", "howToArea", "mathModeSelectArea", "kukuMenuArea", "noticeArea"
 
     ];
 
@@ -19935,6 +19935,26 @@ function openHowToArea() {
     clearScreens();
 
     document.getElementById("howToArea").style.display = "block";
+
+}
+
+/////////////////////////////////////////////////////
+// 🌸 お知らせ画面
+/////////////////////////////////////////////////////
+
+function openNoticeArea() {
+
+    clearScreens();
+
+    document.getElementById("noticeArea").style.display = "block";
+
+}
+
+function backToHomeFromNotice() {
+
+    clearScreens();
+
+    document.getElementById("homeScreen").style.display = "block";
 
 }
 
