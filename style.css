@@ -3156,3 +3156,25 @@ button {
 }
 
 .quizBackBtn { background: #e9ecef; color: #495057; border: none; border-radius: 10px; padding: 12px 20px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-right: 10px; }
+
+.subjectBtn.howto {
+    background: #74c0fc;
+}
+
+.howToSection {
+    text-align: left;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+}
+
+.howToSection h3 {
+    margin-top: 0;
+    color: #d6336c;
+}
+
+.howToSection p {
+    line-height: 1.8;
+    margin: 0;
+}

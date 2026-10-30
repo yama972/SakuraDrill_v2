@@ -12,7 +12,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <link rel="stylesheet" href="style.css?v=20260912-26">
+    <link rel="stylesheet" href="style.css?v=20260912-27">
 
     <title>SakuraDrill</title>
 
@@ -21,7 +21,7 @@
          新しいバージョンが公開されていたら自動的に読み込み直す。
          ホーム画面に追加したアイコンから開いた時のキャッシュ問題対策。 -->
     <script>
-        window.SAKURA_BUILD = "20260912-26";
+        window.SAKURA_BUILD = "20260912-27";
         (function () {
             fetch("version.txt", { cache: "no-store" })
                 .then(function (res) { return res.text(); })
@@ -215,15 +215,13 @@
                 <strong>学習レポート</strong><br>
                 <small>今日の学習を確認！</small>
                 </button>
-            <div class="subjectBackCard">
+            <button class="subjectBtn howto" onclick="openHowToArea()">❓<br><strong>つかいかた</strong><br><small>アプリの使い方ガイド</small></button><div class="subjectBackCard">
                 <button class="menuBtn" onclick="backToGrade()">
                     🎓 学年選択へ戻る
                 </button>
             </div>
 
-        </div> <!-- subjectGrid終了 -->
-        <!-- 🌸 ナビゲーション -->
-                </div>
+        </div> <!-- subjectGrid終了 --><!-- 🌸 ナビゲーション --></div><div id="howToArea" class="card" style="display:none;"><h2>📖 さくらドリルの つかいかた</h2><div class="teacherMessage">🌸 Sakura先生<br>「はじめに、つかいかたを せつめいするね！」</div><div class="howToSection"><h3>✏️ もんだいの こたえかた</h3><p>がめんの したにある すうじボードで こたえを タップしてね。<br>まちがえたら「←」で けせるよ。<br>こたえが できたら「OK」か「次の問題」ボタンを おしてね。</p></div><div class="howToSection"><h3>← もどるボタン</h3><p>クイズの とちゅうでも、「もどる」ボタンを おせば、いつでも さいしょの がめんに もどれるよ。</p></div><div class="howToSection"><h3>🏆 さんすうチャレンジ</h3><p>「はじめてコース（10問）」から「マスターコース（50問）」まで、もんだいの かずが ちがう コースを えらべるよ。<br>「🔢 概数コース」は がい数だけ、「🔢 九九れんしゅう」は 九九だけを れんしゅうできるよ（九九は 2年生だけ えらべます）。</p></div><div class="howToSection"><h3>🧮 筆算れんしゅう</h3><p>わり算・かけ算の ひっ算を れんしゅうできるよ。<br>「📝 問題として出す」は、1だんずつ こたえながら すすむ クイズ形式。<br>「✏️ 自分で入力」は、すきな数字で じぶんの ひっ算を つくって れんしゅうできるよ。</p></div><div class="howToSection"><h3>🌸 Sakura Point</h3><p>もんだいに せいかいすると Sakura Pointが たまるよ。がんばった しるしだよ！</p></div><button class="menuBtn" onclick="backToSubjectHome()">📚 教科選択へ戻る</button></div>
 
 <!-- 🌸 うんちくクイズ（一服タイム）
      47都道府県のうんちくを気軽に楽しむための画面。
@@ -1802,7 +1800,7 @@
                         <script src="data/grades/grade6_social_studies.js"></script>
 
                         <!-- 🌸 算数データベース -->
-                        <script src="data/math/grade1_math.js?v=20260912-26"></script>
+                        <script src="data/math/grade1_math.js?v=20260912-27"></script>
                         <script src="data/math/grade2_math.js"></script>
                         <script src="data/math/grade3_math.js"></script>
                         <script src="data/math/grade4_math.js?v=20260911-25"></script>
@@ -1848,7 +1846,7 @@
                         <script src="data/prefectures/うんちく問題/japan47_trivia.js"></script>
 
                         <!-- メイン -->
-                        <script src="script.js?v=20260912-26"></script>
+                        <script src="script.js?v=20260912-27"></script>
 
 
                         

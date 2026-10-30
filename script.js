@@ -993,7 +993,7 @@ function clearScreens() {
         "studyRecordArea",
 
         // 🌸 うんちくクイズ（一服タイム）
-        "triviaArea"
+        "triviaArea", "howToArea", "mathModeSelectArea", "kukuMenuArea"
 
     ];
 
@@ -19923,6 +19923,18 @@ function startKukuQuiz(dan, count) {
     document.getElementById("kukuMenuArea").style.display = "none";
 
     showQuestion();
+
+}
+
+/////////////////////////////////////////////////////
+// 🌸 つかいかた説明画面
+/////////////////////////////////////////////////////
+
+function openHowToArea() {
+
+    clearScreens();
+
+    document.getElementById("howToArea").style.display = "block";
 
 }
 
