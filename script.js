@@ -19958,6 +19958,26 @@ function backToHomeFromNotice() {
 
 }
 
+function startCalcRuleCourse() {
+    challengeType = "math";
+    challengeCourse = "✏️ 計算のきまりコース";
+    document.getElementById("challengeCourseArea").style.display = "none";
+    startCalcRuleQuiz();
+}
+function startCalcRuleQuiz() {
+    reviewMode = false; reviewList = []; reviewIndex = 0;
+    kokugoMode = false; rikaMode = false; englishMode = false;
+    resetQuizState();
+    currentUnit = "計算のきまりコース";
+    questionCount = 0; score = 0;
+    const allQuestions = getMathDatabase();
+    const calcRuleQuestions = allQuestions.filter(q => q.type === "calcrule");
+    quizState.questions = shuffleArray([...calcRuleQuestions]);
+    maxQuestions = quizState.questions.length;
+    challengeCount = maxQuestions;
+    showQuestion();
+}
+
 ////////////////
 // 🌸 Memo
 // SakuraDrill v7.5 Stable_10_04
