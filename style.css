@@ -3180,3 +3180,24 @@ button {
 }
 
 .challengeCard.calcruleCard { background: #ffa94d; }
+
+.whiteboardCanvas {
+    width: 100%;
+    height: 160px;
+    background: #ffffff;
+    border: 2px solid #ced4da;
+    border-radius: 10px;
+    touch-action: none;
+    display: block;
+    margin-top: 6px;
+}
+.whiteboardClearBtn {
+    float: right;
+    background: #e9ecef;
+    color: #495057;
+    border: none;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}

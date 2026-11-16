@@ -9440,30 +9440,7 @@ function showQuestion() {
         // 数字ボードと同じ□で囲んだ筆算を表示し、答えのマスへ
         // テンキーから書き込めるようにする。問題が変わるたびに
         // 中身を作り直す。
-        const hissan = tryBuildHissan(quizState.currentQuestion);
-
-        const scratchWrap =
-            document.getElementById("hissanScratchWrap");
-
-        const panelContent =
-            document.getElementById("hissanPanelContent");
-
-        // 🌸 新しい問題では、まず回答欄に書き込む状態に戻す
-        mathKeypadFocusedEl = null;
-
-        if (panelContent) {
-            panelContent.innerHTML = hissan
-                ? `${hissan.html}${hissan.suffix ? `<div class="hissanSuffix">${hissan.suffix}</div>` : ""}`
-                : "";
-        }
-
-        if (scratchWrap) {
-            scratchWrap.style.display = hissan ? "flex" : "none";
-        }
-
-        if (hissan) {
-            wireHissanAnswerBoxes();
-        }
+        const scratchWrap = document.getElementById("hissanScratchWrap"); mathKeypadFocusedEl = null; if (scratchWrap) { scratchWrap.style.display = "flex"; } resetWhiteboard();
 
     }
 
@@ -19976,6 +19953,119 @@ function startCalcRuleQuiz() {
     maxQuestions = quizState.questions.length;
     challengeCount = maxQuestions;
     showQuestion();
+}
+
+// 🌸 手書き白板（らくがきボード）：算数の全問題で使える自由記入キャンバス。
+// 採点には一切関係ない、メモ・下書き専用のスペース。
+// 筆算パネル（hissanScratchWrap / hissanPanelContent）の中身を
+// キャンバスに作り替えて再利用する。
+let whiteboardCtx = null;
+let whiteboardDrawing = false;
+let whiteboardLastX = 0;
+let whiteboardLastY = 0;
+
+function setupWhiteboard() {
+
+    const label = document.querySelector(".hissanScratchLabel");
+
+    if (label && !label.dataset.wbLabel) {
+        label.dataset.wbLabel = "1";
+        label.innerHTML = "";
+
+        const labelText = document.createElement("span");
+        labelText.textContent = "📝 らくがきボード（じゆうに書いてOK・採点はされません）";
+        label.appendChild(labelText);
+
+        const clearBtn = document.createElement("button");
+        clearBtn.type = "button";
+        clearBtn.id = "whiteboardClearBtn";
+        clearBtn.className = "whiteboardClearBtn";
+        clearBtn.textContent = "🧹 ぜんぶけす";
+        clearBtn.onclick = clearWhiteboard;
+        label.appendChild(clearBtn);
+    }
+
+    const scratchWrapEl = document.getElementById("hissanScratchWrap");
+    const feedbackSlotEl = document.getElementById("mathFeedbackSlot");
+
+    if (scratchWrapEl && feedbackSlotEl && feedbackSlotEl.parentElement !== scratchWrapEl) {
+        scratchWrapEl.appendChild(feedbackSlotEl);
+    }
+
+    const panelContent = document.getElementById("hissanPanelContent");
+
+    let canvas = document.getElementById("whiteboardCanvas");
+
+    if (!canvas && panelContent) {
+        canvas = document.createElement("canvas");
+        canvas.id = "whiteboardCanvas";
+        canvas.className = "whiteboardCanvas";
+        panelContent.appendChild(canvas);
+    }
+
+    if (!canvas) return;
+
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.round(rect.width * ratio));
+        canvas.height = Math.max(1, Math.round(rect.height * ratio));
+        const ctx = canvas.getContext("2d");
+        ctx.scale(ratio, ratio);
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#2b2b2b";
+        whiteboardCtx = ctx;
+    }
+
+    if (!canvas.dataset.wired) {
+        canvas.dataset.wired = "1";
+
+        window.addEventListener("resize", resizeCanvas);
+
+        function pos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        canvas.addEventListener("pointerdown", (e) => {
+            whiteboardDrawing = true;
+            const p = pos(e);
+            whiteboardLastX = p.x;
+            whiteboardLastY = p.y;
+            canvas.setPointerCapture(e.pointerId);
+        });
+
+        canvas.addEventListener("pointermove", (e) => {
+            if (!whiteboardDrawing || !whiteboardCtx) return;
+            const p = pos(e);
+            whiteboardCtx.beginPath();
+            whiteboardCtx.moveTo(whiteboardLastX, whiteboardLastY);
+            whiteboardCtx.lineTo(p.x, p.y);
+            whiteboardCtx.stroke();
+            whiteboardLastX = p.x;
+            whiteboardLastY = p.y;
+        });
+
+        canvas.addEventListener("pointerup", () => { whiteboardDrawing = false; });
+        canvas.addEventListener("pointerleave", () => { whiteboardDrawing = false; });
+        canvas.addEventListener("pointercancel", () => { whiteboardDrawing = false; });
+    }
+
+    resizeCanvas();
+}
+
+function clearWhiteboard() {
+    const canvas = document.getElementById("whiteboardCanvas");
+    if (!canvas || !whiteboardCtx) return;
+    const ratio = window.devicePixelRatio || 1;
+    whiteboardCtx.clearRect(0, 0, canvas.width / ratio, canvas.height / ratio);
+}
+
+function resetWhiteboard() {
+    setupWhiteboard();
+    clearWhiteboard();
 }
 
 ////////////////
